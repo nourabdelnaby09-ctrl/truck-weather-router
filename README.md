@@ -39,6 +39,8 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+Live demo: Not deployed yet.
+
 ## Configuration
 
 No API keys are required for the default public providers:
@@ -58,6 +60,6 @@ Weather responses are cached in-process for one hour. The cache is per applicati
 
 ## Deploying to Render
 
-The root `render.yaml` defines a Django API service and a Vite static site. Set a generated `DJANGO_SECRET_KEY` and deploy the blueprint. The frontend is configured to call the API service; Django only allows the configured Render frontend origin. Configure `ROUTING_API_URL` to a production routing provider before serving public traffic. SQLite is ephemeral on Render, so configure a managed database before adding persistent application data.
+The root `render.yaml` defines a Django API service and a Vite static site. Set a generated `DJANGO_SECRET_KEY` and deploy the blueprint. The API CORS origin is read from the frontend service host in the blueprint, so renaming the Render static service requires updating that reference. Configure `ROUTING_API_URL` to a production routing provider before serving public traffic. SQLite is ephemeral on Render, so configure a managed database before adding persistent application data.
 
 Loom walkthrough link: pending a share URL.

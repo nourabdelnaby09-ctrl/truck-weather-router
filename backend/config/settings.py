@@ -25,7 +25,11 @@ CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173",
 )
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
+CORS_ALLOWED_ORIGINS = [
+    origin if "://" in origin else f"https://{origin}"
+    for value in CORS_ALLOWED_ORIGINS.split(",")
+    if (origin := value.strip())
+]
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
