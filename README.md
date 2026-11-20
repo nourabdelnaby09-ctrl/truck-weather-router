@@ -12,6 +12,8 @@ React + Django application that compares three driving routes and evaluates weat
 - Route ranking by No Travel miles, severe miles, high miles, average risk, then travel time
 - Interactive route map with a continuous risk-weighted weather heat layer
 - 0–48 hour forecast slider, backed by up to 7 forecast days
+- Map toolbar toggles for RainViewer radar, checkpoint weather labels, elevation, alerts, and the risk legend
+- Possible-ice checkpoints highlighted with an orange ring
 
 ## Run locally
 

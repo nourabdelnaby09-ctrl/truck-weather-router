@@ -162,6 +162,7 @@ def weather_at(lat, lon, at_time):
         "rain": rain,
         "snow": snow,
         "wind": wind,
+        "elevation": forecast.get("elevation"),
     }
     cache.set(cache_key, result, 60 * 60)
     return result
@@ -229,6 +230,7 @@ def checkpoint_weather(points, load_lbs, forecast_hour=0):
             "rain": raw["rain"],
             "snow": raw["snow"],
             "temperature": raw["temperature"],
+            "elevation": raw.get("elevation"),
         })
     return checkpoints
 
