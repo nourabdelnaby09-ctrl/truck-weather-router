@@ -17,8 +17,9 @@ services:
           name: truck-weather-frontend
           property: host
 
-  - type: static
+  - type: web
     name: truck-weather-frontend
+    runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
