@@ -2,6 +2,7 @@ services:
   - type: web
     name: truck-weather-api
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python backend/manage.py migrate && gunicorn --chdir backend config.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
@@ -20,6 +21,7 @@ services:
   - type: web
     name: truck-weather-frontend
     runtime: static
+    plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
