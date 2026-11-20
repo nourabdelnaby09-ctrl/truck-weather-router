@@ -39,7 +39,11 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-Live demo: Not deployed yet.
+## Links
+
+- **Source repository:** https://github.com/nourabdelnaby09-ctrl/truck-weather-router
+- **Live demo:** Not deployed. A ready-to-use Render blueprint is included at `render.yaml`; free-tier hosting required payment verification on the available account, so the app is demonstrated locally instead.
+- **Loom walkthrough:** pending a share URL.
 
 ## Configuration
 
@@ -62,4 +66,4 @@ Weather responses are cached in-process for one hour. The cache is per applicati
 
 The root `render.yaml` defines a Django API service and a Vite static site. Set a generated `DJANGO_SECRET_KEY` and deploy the blueprint. The API CORS origin is read from the frontend service host in the blueprint, so renaming the Render static service requires updating that reference. Configure `ROUTING_API_URL` to a production routing provider before serving public traffic. SQLite is ephemeral on Render, so configure a managed database before adding persistent application data.
 
-Loom walkthrough link: pending a share URL.
+The walkthrough demonstrates the app running locally (both servers) since no hosted instance is available.
