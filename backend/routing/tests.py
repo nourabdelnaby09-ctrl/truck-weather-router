@@ -322,3 +322,38 @@ class RoutingUnitTests(SimpleTestCase):
         self.assertEqual(point["risk"], "No Travel")
         self.assertEqual(point["arrival"], "2026-01-01T12:00:00+00:00")
         self.assertEqual(get_weather.call_args.args[2], datetime(2026, 1, 1, 12, tzinfo=timezone.utc))
+
+    @patch("routing.views.requests.get")
+    def test_corridor_batches_weather_for_a_grid_near_the_route(self, get):
+        class Response:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                hourly = {
+                    "time": ["2026-01-01T12:00", "2026-01-01T13:00"],
+                    "temperature_2m": [4, 5],
+                    "rain": [0, 0],
+                    "snowfall": [0, 0],
+                    "wind_speed_10m": [20, 20],
+                }
+                return [{"hourly": hourly, "elevation": 180} for _ in range(3)]
+
+        get.return_value = Response()
+        response = Client().post(
+            "/api/corridor/",
+            data={
+                "forecastHour": 2,
+                "loadWeight": 35000,
+                "departure": "2026-01-01T10:00:00Z",
+                "geometry": [[-87.6, 41.8], [-87.5, 41.8]],
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["hour"], 2)
+        self.assertTrue(payload["cells"])
+        self.assertTrue(all(cell["risk"] == "Low" for cell in payload["cells"]))
+        self.assertIn(",", get.call_args.kwargs["params"]["latitude"])
