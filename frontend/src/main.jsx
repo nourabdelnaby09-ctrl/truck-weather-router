@@ -166,13 +166,12 @@ const LAYER_ICONS = {
   snow: ["M7 15h10a4 4 0 0 0-.4-8 5.5 5.5 0 0 0-10.2 1.4A3.4 3.4 0 0 0 7 15Z", "M12 18v4", "M10 20l4-4", "M14 20l-4-4"],
   elevation: ["M3 19l6-10 4 6 2-3 6 7H3Z", "M7 11l2-2 3 4"],
   alerts: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4", "M12 3v2"],
-  legend: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z", "M12 11v5", "M12 8h.01"],
 };
 
 function LayerIcon({ name }) {
   return (
     <svg className="weather-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      {(LAYER_ICONS[name] || LAYER_ICONS.legend).map((path) => (
+      {(LAYER_ICONS[name] || LAYER_ICONS.weather).map((path) => (
         <path key={path} d={path} />
       ))}
     </svg>
@@ -188,34 +187,35 @@ function WeatherToolbar({
   forecastHour,
 }) {
   const chips = [
-    ["weather", "Weather"],
     ["temp", "Temp"],
     ["wind", "Wind"],
     ["rain", "Rain"],
     ["snow", "Snow"],
     ["elevation", "Elevation"],
     ["alerts", "Alerts"],
-    ["legend", "Legend"],
   ];
 
   function toggle(key) {
-    setMapLayers((current) => ({ ...current, [key]: !current[key] }));
+    setMapLayers((current) => Object.fromEntries(
+      Object.keys(current).map((layer) => [layer, layer === key && !current[layer]]),
+    ));
   }
 
   return (
     <div className="weather-toolbar-wrap">
       <div className="weather-toolbar" role="toolbar" aria-label="Map weather layers">
+        <span className="weather-toolbar-title">
+          <LayerIcon name="weather" />
+          <span>Weather</span>
+        </span>
         {chips.map(([key, label]) => {
-          const disabled = key === "weather" && (radarLoading || Boolean(radarError));
           return (
             <button
               type="button"
               key={key}
               className={`weather-chip${mapLayers[key] ? " active" : ""}`}
               aria-pressed={mapLayers[key]}
-              disabled={disabled}
               onClick={() => toggle(key)}
-              title={key === "weather" && radarLoading ? "Loading radar" : undefined}
             >
               <LayerIcon name={key} />
               <span>{label}</span>
@@ -226,33 +226,20 @@ function WeatherToolbar({
       </div>
       {radarLoading && <p className="radar-note">Loading radar…</p>}
       {radarError && <p className="radar-note error">{radarError}</p>}
-      {(mapLayers.alerts || mapLayers.legend) && (
+      {mapLayers.alerts && (
         <div className="toolbar-popovers">
-          {mapLayers.alerts && (
-            <section className="toolbar-popover alerts-popover" aria-label="Route weather alerts">
-              <strong>Severe weather alerts ({alertCheckpoints.length})</strong>
-              {alertCheckpoints.length ? (
-                <ul>
-                  {alertCheckpoints.map((point, index) => (
-                    <li key={`${point.distance}-${point.arrival}-${index}`}>
-                      <b>{point.risk}</b> · mi {Number(point.distance).toFixed(1)} · {new Date(point.arrival).toLocaleString()}
-                    </li>
-                  ))}
-                </ul>
-              ) : <p>No severe or no-travel checkpoints for this route.</p>}
-            </section>
-          )}
-          {mapLayers.legend && (
-            <section className="toolbar-popover legend-popover" aria-label="Weather risk legend">
-              <strong>Weather risk</strong>
-              <div className="toolbar-risk-legend">
-                {Object.entries(RISK_COLORS).map(([label, color]) => (
-                  <span key={label}><i style={{ backgroundColor: color }} />{label}</span>
+          <section className="toolbar-popover alerts-popover" aria-label="Route weather alerts">
+            <strong>Severe weather alerts ({alertCheckpoints.length})</strong>
+            {alertCheckpoints.length ? (
+              <ul>
+                {alertCheckpoints.map((point, index) => (
+                  <li key={`${point.distance}-${point.arrival}-${index}`}>
+                    <b>{point.risk}</b> · mi {Number(point.distance).toFixed(1)} · {new Date(point.arrival).toLocaleString()}
+                  </li>
                 ))}
-              </div>
-              <p>Lighter = lower risk, darker = severe / no travel; orange ring = possible ice.</p>
-            </section>
-          )}
+              </ul>
+            ) : <p>No severe or no-travel checkpoints for this route.</p>}
+          </section>
         </div>
       )}
       <span className="sr-only">Forecast offset: {forecastHour} hours</span>
@@ -309,7 +296,6 @@ function App() {
     snow: false,
     elevation: false,
     alerts: false,
-    legend: false,
   });
   const [radarTimestamp, setRadarTimestamp] = useState(radarTimestampCache);
   const [radarLoading, setRadarLoading] = useState(!radarTimestampCache);

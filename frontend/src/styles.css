@@ -150,6 +150,19 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   box-shadow: 0 3px 14px rgba(39, 55, 77, .16);
   pointer-events: auto;
 }
+.weather-toolbar-title {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 13px 0 10px;
+  border-right: 1px solid rgba(115, 132, 157, .28);
+  color: #172033;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
 .weather-chip {
   display: inline-flex;
   flex: 0 0 auto;
@@ -174,7 +187,6 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   color: #235dbe;
 }
 .weather-chip:focus-visible { outline: 2px solid #6c93d2; outline-offset: 2px; }
-.weather-chip:disabled { opacity: .58; cursor: wait; }
 .weather-chip-icon { font-size: 13px; line-height: 1; }
 .alert-count {
   display: inline-grid;
@@ -223,9 +235,6 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
 .toolbar-popover strong { color: #172033; font-size: 12px; }
 .toolbar-popover ul { display: grid; gap: 7px; padding-left: 18px; margin: 10px 0 0; }
 .toolbar-popover p { margin: 9px 0 0; line-height: 1.5; }
-.toolbar-risk-legend { display: flex; flex-wrap: wrap; gap: 9px 13px; margin-top: 10px; }
-.toolbar-risk-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.toolbar-risk-legend i { width: 10px; height: 10px; border-radius: 50%; }
 .checkpoint-label {
   padding: 2px 5px !important;
   border: 1px solid rgba(190, 201, 218, .9) !important;
@@ -428,6 +437,7 @@ fieldset button.active { border-color: #4d78c6; background: #1b3e7a; color: #fff
   border-color: #2c4a7f;
   background: rgba(14, 33, 71, .94);
 }
+.weather-toolbar-title { border-right-color: rgba(140, 175, 235, .3); color: #fff; }
 .weather-chip { color: #c3d6f5; }
 .weather-chip:hover:not(:disabled) { background: #1b3e7a; }
 .weather-chip.active { border-color: #4d78c6; background: #1b3e7a; color: #fff; }
