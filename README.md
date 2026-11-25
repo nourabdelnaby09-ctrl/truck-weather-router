@@ -14,6 +14,8 @@ React + Django application that compares three driving routes and evaluates weat
 - 0–48 hour forecast slider, backed by up to 7 forecast days
 - Map toolbar toggles for RainViewer radar, checkpoint weather labels, elevation, alerts, and the risk legend
 - Possible-ice checkpoints highlighted with an orange ring
+- RainViewer radar tiles scale above their native zoom limit so the overlay remains visible when zooming in
+- Optional simulated no-travel preview in Cheyenne, Wyoming (55 mph); explicitly separate from live forecasts and route risk calculations
 
 ## Run locally
 

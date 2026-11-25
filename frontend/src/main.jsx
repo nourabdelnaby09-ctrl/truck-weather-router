@@ -23,6 +23,12 @@ const RISK_STRENGTH = {
   Severe: 0.76,
   "No Travel": 1,
 };
+const WIND_DEMO_POINT = {
+  lat: 41.14,
+  lon: -104.82,
+  place: "Cheyenne, Wyoming",
+  wind: 55,
+};
 let radarTimestampCache = null;
 let radarTimestampRequest = null;
 
@@ -90,6 +96,16 @@ function FitRoutes({ routes, origin, destination }) {
       map.fitBounds(points, { padding: [35, 35] });
     }
   }, [map, routes, origin, destination]);
+  return null;
+}
+
+function WindDemoFocus({ active }) {
+  const map = useMap();
+  useEffect(() => {
+    if (active) {
+      map.flyTo([WIND_DEMO_POINT.lat, WIND_DEMO_POINT.lon], 7);
+    }
+  }, [active, map]);
   return null;
 }
 
@@ -241,6 +257,7 @@ function App() {
   const [forecastRoutes, setForecastRoutes] = useState(null);
   const [forecastError, setForecastError] = useState("");
   const [forecastLoading, setForecastLoading] = useState(false);
+  const [windDemo, setWindDemo] = useState(false);
   const [mapLayers, setMapLayers] = useState({
     weather: false,
     temp: false,
@@ -397,6 +414,15 @@ function App() {
             <button className="primary" type="submit" disabled={loading}>
               {loading ? "Analyzing routes…" : "Compare routes"}
             </button>
+            <button
+              className="demo-button"
+              type="button"
+              aria-pressed={windDemo}
+              onClick={() => setWindDemo((active) => !active)}
+            >
+              {windDemo ? "Hide No-Travel demo" : "Preview No-Travel demo"}
+            </button>
+            <p className="demo-note">Simulated 55 mph wind at Cheyenne, Wyoming; not a live forecast.</p>
             {error && <p className="error">{error}</p>}
           </form>
 
@@ -445,11 +471,13 @@ function App() {
           />
           <MapContainer center={[41.8781, -87.6298]} zoom={7} scrollWheelZoom>
             <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <WindDemoFocus active={windDemo} />
             {mapLayers.weather && radarTimestamp && (
               <TileLayer
                 url={`https://tilecache.rainviewer.com/v2/radar/${radarTimestamp}/256/{z}/{x}/{y}/2/1_1.png`}
                 opacity={0.55}
                 zIndex={2}
+                maxNativeZoom={7}
                 attribution="Radar: RainViewer"
               />
             )}
@@ -496,6 +524,28 @@ function App() {
                 </Popup>
               </CircleMarker>
             ))}
+            {windDemo && (
+              <CircleMarker
+                center={[WIND_DEMO_POINT.lat, WIND_DEMO_POINT.lon]}
+                radius={12}
+                pathOptions={{
+                  color: "#7a1f25",
+                  fillColor: RISK_COLORS["No Travel"],
+                  fillOpacity: 1,
+                  weight: 4,
+                }}
+              >
+                <Tooltip permanent direction="top" offset={[0, -10]} className="demo-marker-label">
+                  DEMO · NO TRAVEL
+                </Tooltip>
+                <Popup>
+                  <strong>SIMULATED DEMO — NOT LIVE WEATHER</strong><br />
+                  {WIND_DEMO_POINT.place}<br />
+                  Wind: {WIND_DEMO_POINT.wind} mph<br />
+                  Risk: No Travel
+                </Popup>
+              </CircleMarker>
+            )}
           </MapContainer>
 
           {activeRoutes.length > 0 && (
