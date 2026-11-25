@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import L from "leaflet";
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import "leaflet.heat";
 import { rankRoutes, withRisk } from "./lib/risk.js";
 import "./styles.css";
 
@@ -16,13 +15,6 @@ const RISK_COLORS = {
   High: "#ed8936",
   Severe: "#dc3545",
   "No Travel": "#7a1f25",
-};
-const RISK_STRENGTH = {
-  Low: 0.16,
-  Moderate: 0.34,
-  High: 0.53,
-  Severe: 0.76,
-  "No Travel": 1,
 };
 const WIND_DEMO_POINT = {
   lat: 41.14,
@@ -110,53 +102,51 @@ function WindDemoFocus({ active }) {
   return null;
 }
 
-function RiskHeatLayer({ routes }) {
+function CorridorHeatLayer({ cells }) {
   const map = useMap();
-  const heatPoints = useMemo(() => routes.flatMap((route) => {
-    const checkpoints = route.checkpoints;
-    const points = [];
-    for (let index = 0; index < checkpoints.length; index += 1) {
-      const current = checkpoints[index];
-      const strength = RISK_STRENGTH[current.risk] ?? RISK_STRENGTH.Low;
-      const next = checkpoints[index + 1];
-      if (!next) {
-        points.push([current.lat, current.lon, strength]);
-        continue;
-      }
-
-      const segmentMiles = Math.max(0, next.distance - current.distance);
-      const subdivisions = Math.max(1, Math.ceil(segmentMiles / 5));
-      const nextStrength = RISK_STRENGTH[next.risk] ?? RISK_STRENGTH.Low;
-      for (let step = 0; step < subdivisions; step += 1) {
-        const progress = step / subdivisions;
-        points.push([
-          current.lat + (next.lat - current.lat) * progress,
-          current.lon + (next.lon - current.lon) * progress,
-          strength + (nextStrength - strength) * progress,
-        ]);
-      }
-    }
-    return points;
-  }), [routes]);
 
   useEffect(() => {
-    if (!heatPoints.length) return undefined;
-    const layer = L.heatLayer(heatPoints, {
-      radius: 25,
-      blur: 20,
-      maxZoom: 12,
-      max: 1,
-      minOpacity: 0.2,
-      gradient: {
-        0.15: RISK_COLORS.Low,
-        0.34: RISK_COLORS.Moderate,
-        0.53: RISK_COLORS.High,
-        0.76: RISK_COLORS.Severe,
-        1: RISK_COLORS["No Travel"],
-      },
-    }).addTo(map);
-    return () => map.removeLayer(layer);
-  }, [heatPoints, map]);
+    if (!cells?.length) return undefined;
+    const paneName = "corridorHeat";
+    if (!map.getPane(paneName)) {
+      map.createPane(paneName);
+      map.getPane(paneName).style.zIndex = 350;
+    }
+    const canvas = L.DomUtil.create("canvas", "corridor-heat-layer");
+    const size = map.getSize();
+    canvas.width = size.x;
+    canvas.height = size.y;
+    map.getPane(paneName).appendChild(canvas);
+
+    let frame = 0;
+    const draw = () => {
+      frame = 0;
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0, 0]));
+      const radius = Math.max(7, Math.min(28, 22 - map.getZoom()));
+      context.globalAlpha = 0.42;
+      cells.forEach((cell) => {
+        const point = map.latLngToContainerPoint([cell.lat, cell.lon]);
+        context.fillStyle = RISK_COLORS[cell.risk] || RISK_COLORS.Low;
+        context.beginPath();
+        context.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+        context.fill();
+      });
+      context.globalAlpha = 1;
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(draw);
+    };
+    map.on("moveend zoomend resize", schedule);
+    schedule();
+
+    return () => {
+      map.off("moveend zoomend resize", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+      canvas.remove();
+    };
+  }, [cells, map]);
 
   return null;
 }
@@ -258,6 +248,9 @@ function App() {
   const [forecastRoutes, setForecastRoutes] = useState(null);
   const [forecastError, setForecastError] = useState("");
   const [forecastLoading, setForecastLoading] = useState(false);
+  const [corridorCells, setCorridorCells] = useState([]);
+  const [corridorLoading, setCorridorLoading] = useState(false);
+  const corridorCache = useRef(new Map());
   const [windDemo, setWindDemo] = useState(false);
   const [mapLayers, setMapLayers] = useState({
     weather: false,
@@ -353,6 +346,8 @@ function App() {
       setSelectedRouteId(payload.routes.find((route) => route.recommended)?.id ?? payload.routes[0]?.id ?? null);
       setForecastHour(0);
       setForecastRoutes(null);
+      corridorCache.current.clear();
+      setCorridorCells([]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -381,6 +376,54 @@ function App() {
   const alertCheckpoints = selectedRoute?.checkpoints.filter(
     (point) => point.risk === "Severe" || point.risk === "No Travel",
   ) || [];
+
+  // Corridor grid: debounce 100ms, cache by (cell batch, hour), prefetch ±1 hour.
+  useEffect(() => {
+    if (!selectedRoute || forecastHour === 0) {
+      setCorridorCells([]);
+      setCorridorLoading(false);
+      return undefined;
+    }
+    const controller = new AbortController();
+    const cacheKey = (hour) => `${selectedRoute.id}:${form.loadWeight}:${form.departure}:${hour}`;
+    const hours = [forecastHour - 1, forecastHour, forecastHour + 1]
+      .filter((hour) => hour >= 0 && hour <= 48);
+    const missing = hours.filter((hour) => !corridorCache.current.has(cacheKey(hour)));
+
+    const timer = window.setTimeout(async () => {
+      setCorridorLoading(true);
+      try {
+        await Promise.all(missing.map(async (hour) => {
+          const response = await fetch(`${API_URL}/api/corridor/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              forecastHour: hour,
+              loadWeight: Number(form.loadWeight) || 0,
+              departure: new Date(form.departure).toISOString(),
+              geometry: selectedRoute.geometry,
+            }),
+          });
+          if (!response.ok) return;
+          const payload = await response.json();
+          corridorCache.current.set(cacheKey(hour), payload.cells);
+        }));
+        if (!controller.signal.aborted) {
+          setCorridorCells(corridorCache.current.get(cacheKey(forecastHour)) || []);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") setCorridorCells([]);
+      } finally {
+        if (!controller.signal.aborted) setCorridorLoading(false);
+      }
+    }, 100);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [selectedRoute, forecastHour, form.loadWeight, form.departure]);
 
   return (
     <main>
@@ -507,7 +550,7 @@ function App() {
               </Polyline>
               );
             })}
-            {selectedRoute && <RiskHeatLayer routes={[selectedRoute]} />}
+            <CorridorHeatLayer cells={corridorCells} />
             {selectedRoute?.checkpoints.map((point, index) => (
               <CircleMarker
                 key={`${selectedRoute.id}-${index}`}
@@ -560,7 +603,7 @@ function App() {
             <div className="forecast-control">
               <div>
                 <span>Forecast corridor</span>
-                <b>{forecastLoading ? "Updating…" : `+${forecastHour} hr`}</b>
+                <b>{forecastLoading || corridorLoading ? "Updating…" : `+${forecastHour} hr`}</b>
               </div>
               <input aria-label="Forecast hour offset" type="range" min="0" max="48" value={forecastHour} onChange={(e) => setForecastHour(Number(e.target.value))} />
               {forecastError && <p className="error">{forecastError}</p>}

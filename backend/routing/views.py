@@ -108,32 +108,22 @@ def fetch_weather_forecast(params):
             raise WeatherProviderUnavailable(WEATHER_UNAVAILABLE_MESSAGE) from exc
 
 
-def weather_at(lat, lon, at_time):
-    target = at_time.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
-    cache_key = "weather:" + sha256(
+def weather_target(at_time):
+    return at_time.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
+
+
+def weather_cache_key(lat, lon, at_time):
+    target = weather_target(at_time)
+    return "weather:" + sha256(
         f"{lat:.2f}:{lon:.2f}:{target.isoformat()}".encode()
     ).hexdigest()
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return cached
 
-    forecast = fetch_weather_forecast(
-        {
-            "latitude": lat,
-            "longitude": lon,
-            "hourly": "temperature_2m,precipitation,rain,snowfall,wind_speed_10m",
-            "wind_speed_unit": "mph",
-            "precipitation_unit": "inch",
-            "timezone": "UTC",
-            "forecast_days": 7,
-        }
-    )
-    hourly = forecast.get("hourly", {})
+
+def hourly_index(hourly, at_time):
     times = hourly.get("time", [])
     if not times:
         raise ValueError("Weather provider returned no hourly forecast.")
-
-    target_naive = target.replace(tzinfo=None)
+    target_naive = weather_target(at_time).replace(tzinfo=None)
     differences = []
     forecast_hours = []
     for index, timestamp in enumerate(times):
@@ -150,20 +140,45 @@ def weather_at(lat, lon, at_time):
             "The requested trip time is outside the available 7-day forecast. "
             "Choose an earlier departure or a smaller forecast offset."
         )
-    index = min(differences)[1]
+    return min(differences)[1]
 
+
+def weather_from_hourly(hourly, index, elevation=None):
     def value(name):
         values = hourly.get(name, [])
         return values[index] if index < len(values) and values[index] is not None else 0
 
-    wind, rain, snow = value("wind_speed_10m"), value("rain"), value("snowfall")
-    result = {
+    return {
         "temperature": value("temperature_2m"),
-        "rain": rain,
-        "snow": snow,
-        "wind": wind,
-        "elevation": forecast.get("elevation"),
+        "rain": value("rain"),
+        "snow": value("snowfall"),
+        "wind": value("wind_speed_10m"),
+        "elevation": elevation,
     }
+
+
+def weather_at(lat, lon, at_time):
+    cache_key = weather_cache_key(lat, lon, at_time)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    forecast = fetch_weather_forecast(
+        {
+            "latitude": lat,
+            "longitude": lon,
+            "hourly": "temperature_2m,precipitation,rain,snowfall,wind_speed_10m",
+            "wind_speed_unit": "mph",
+            "precipitation_unit": "inch",
+            "timezone": "UTC",
+            "forecast_days": 7,
+        }
+    )
+    result = weather_from_hourly(
+        forecast.get("hourly", {}),
+        hourly_index(forecast.get("hourly", {}), at_time),
+        forecast.get("elevation"),
+    )
     cache.set(cache_key, result, 60 * 60)
     return result
 
@@ -246,6 +261,74 @@ def summarize_roads(route):
         return "Road names unavailable"
     summary = " → ".join(names[:4])
     return f"{summary} → …" if len(names) > 4 else summary
+
+
+def corridor_cells(geometry, radius_miles=25, step_deg=0.25, limit=500):
+    """Grid of cell centres within `radius_miles` of a GeoJSON [lon, lat] line."""
+    route_points = [(float(point[1]), float(point[0])) for point in geometry]
+    if not route_points:
+        return []
+
+    # Subsample long geometries so nearest-distance checks stay cheap.
+    stride = max(1, len(route_points) // 80)
+    samples = route_points[::stride]
+    if samples[-1] != route_points[-1]:
+        samples.append(route_points[-1])
+
+    padding = radius_miles / 69.0
+    lat_min = min(point[0] for point in route_points) - padding
+    lat_max = max(point[0] for point in route_points) + padding
+    lon_min = min(point[1] for point in route_points) - padding
+    lon_max = max(point[1] for point in route_points) + padding
+
+    cells = []
+    lat = math.floor(lat_min / step_deg) * step_deg
+    while lat <= lat_max:
+        lon = math.floor(lon_min / step_deg) * step_deg
+        while lon <= lon_max:
+            centre = (round(lat, 3), round(lon, 3))
+            if any(haversine_miles(centre, point) <= radius_miles for point in samples):
+                cells.append(centre)
+            lon += step_deg
+        lat += step_deg
+
+    if len(cells) > limit:
+        keep = max(1, len(cells) // limit)
+        cells = cells[::keep][:limit]
+    return cells
+
+
+def batch_weather_at(cells, at_time, load_lbs):
+    """One Open-Meteo request for all cells; results cached per cell/hour."""
+    if not cells:
+        return []
+    forecast = fetch_weather_forecast(
+        {
+            "latitude": ",".join(f"{lat:.3f}" for lat, _ in cells),
+            "longitude": ",".join(f"{lon:.3f}" for _, lon in cells),
+            "hourly": "temperature_2m,precipitation,rain,snowfall,wind_speed_10m",
+            "wind_speed_unit": "mph",
+            "precipitation_unit": "inch",
+            "timezone": "UTC",
+            "forecast_days": 7,
+        }
+    )
+    forecasts = forecast if isinstance(forecast, list) else [forecast]
+    target = weather_target(at_time)
+    results = []
+    for (lat, lon), single in zip(cells, forecasts):
+        hourly = single.get("hourly", {})
+        weather = weather_from_hourly(hourly, hourly_index(hourly, at_time), single.get("elevation"))
+        results.append({
+            "lat": lat,
+            "lon": lon,
+            "risk": classify_condition(weather["wind"], weather["rain"], weather["snow"], load_lbs),
+            "wind": weather["wind"],
+            "rain": weather["rain"],
+            "snow": weather["snow"],
+        })
+        cache.set(weather_cache_key(lat, lon, target), weather, 60 * 60)
+    return results
 
 
 @csrf_exempt
@@ -391,6 +474,34 @@ def heatmap(request):
                 "checkpoints": checkpoint_weather(points, load_lbs, forecast_hour),
             })
         return JsonResponse({"forecastHour": forecast_hour, "routes": forecast_routes})
+    except ForecastOutOfRange as exc:
+        return JsonResponse({"error": str(exc)}, status=422)
+    except WeatherProviderUnavailable as exc:
+        return JsonResponse({"error": str(exc)}, status=503)
+    except (KeyError, TypeError, ValueError, InvalidOperation, requests.RequestException) as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+
+@csrf_exempt
+@require_POST
+def corridor(request):
+    """Canvas heatmap source: a risk grid within 25 mi of one route."""
+    try:
+        import json
+        body = json.loads(request.body or "{}")
+        forecast_hour = int(body.get("forecastHour", 0))
+        if not 0 <= forecast_hour <= 48:
+            raise ValueError("forecastHour must be between 0 and 48.")
+        load_lbs = float(body["loadWeight"])
+        geometry = body["geometry"]
+        if not isinstance(geometry, list) or len(geometry) < 2:
+            raise ValueError("geometry must be a GeoJSON coordinate array.")
+        target = parse_datetime(body["departure"]) + timedelta(hours=forecast_hour)
+        cells = corridor_cells(geometry)
+        return JsonResponse({
+            "hour": forecast_hour,
+            "cells": batch_weather_at(cells, target, load_lbs),
+        })
     except ForecastOutOfRange as exc:
         return JsonResponse({"error": str(exc)}, status=422)
     except WeatherProviderUnavailable as exc:
