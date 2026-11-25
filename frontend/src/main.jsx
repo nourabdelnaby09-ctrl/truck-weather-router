@@ -4,6 +4,7 @@ import L from "leaflet";
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
+import { rankRoutes, withRisk } from "./lib/risk.js";
 import "./styles.css";
 
 const configuredApiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -363,10 +364,16 @@ function App() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  const activeRoutes = data?.routes || [];
+  // Single source of truth: all risk levels and ranking come from src/lib/risk.js.
+  const activeRoutes = useMemo(
+    () => rankRoutes(data?.routes || [], Number(form.loadWeight) || 0),
+    [data, form.loadWeight],
+  );
   const displayedRoutes = activeRoutes.map((route) => {
     const forecastRoute = forecastRoutes?.find((item) => item.id === route.id);
-    return forecastRoute ? { ...route, checkpoints: forecastRoute.checkpoints } : route;
+    return forecastRoute
+      ? { ...route, checkpoints: withRisk(forecastRoute.checkpoints, Number(form.loadWeight) || 0) }
+      : route;
   });
   const selectedRoute = displayedRoutes.find((route) => route.id === selectedRouteId)
     || displayedRoutes.find((route) => route.recommended)
@@ -445,15 +452,16 @@ function App() {
                   </div>
                   <div className="metrics">
                     <span><b>{route.distanceMiles}</b> mi</span>
-                    <span><b>{formatDuration(route.durationSeconds)}</b> ETA</span>
+                    <span><b>{formatDuration(route.durationSeconds)}</b> drive</span>
+                    <span>Arrive <b>{new Date(route.eta).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</b></span>
                   </div>
                   <p className="road-summary">{route.roadSummary}</p>
                   <div className="risk-summary">
-                    <span>Severe <b>{route.severeMiles} mi</b></span>
+                    <span>Severe* <b>{route.severeMiles} mi</b></span>
                     <span>High <b>{route.highMiles} mi</b></span>
-                    <span>No Travel <b>{route.noTravelMiles} mi</b></span>
                     <span>Avg risk <b>{route.averageRisk}</b></span>
                   </div>
+                  <p className="rank-reason">{route.reason}</p>
                 </button>
               ))}
             </div>
