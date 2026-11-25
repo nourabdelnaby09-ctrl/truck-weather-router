@@ -277,17 +277,177 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
 .legend i { width: 8px; height: 8px; border-radius: 50%; }
 
 @media (max-width: 800px) {
-  .workspace { grid-template-columns: 1fr; grid-template-rows: auto 55vh; height: auto; }
-  aside { border-right: 0; border-bottom: 1px solid #dfe4ec; }
-  .map-panel { height: 55vh; }
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(460px, 68svh);
+    height: auto;
+  }
+  aside { min-width: 0; border-right: 0; border-bottom: 1px solid #dfe4ec; }
+  .map-panel { min-width: 0; min-height: 460px; }
   .legend { gap: 7px; flex-wrap: wrap; }
-  .weather-toolbar-wrap { left: 8px; right: 8px; top: 8px; }
+  .weather-toolbar-wrap { left: 8px; right: 8px; top: max(8px, env(safe-area-inset-top)); }
   .weather-toolbar {
     width: 100%;
     overflow-x: auto;
     flex-wrap: nowrap;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+    border-radius: 14px;
   }
-  .weather-chip { padding: 0 9px; }
-  .toolbar-popover { top: 48px; }
+  .weather-toolbar::-webkit-scrollbar { display: none; }
+  .weather-chip { min-height: 42px; padding: 0 10px; }
+  .toolbar-popovers {
+    top: 52px;
+    width: min(390px, calc(100vw - 32px));
+    max-height: 40vh;
+  }
+  .forecast-control {
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 520px) {
+  header {
+    height: auto;
+    min-height: 68px;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .brand-mark { flex: 0 0 36px; width: 36px; height: 36px; }
+  header h1 { font-size: clamp(15px, 4.5vw, 18px); }
+  .eyebrow { font-size: 9px; }
+  .workspace { grid-template-rows: auto minmax(430px, 68svh); }
+  aside { padding: 16px 14px; }
+  form { gap: 12px; }
+  label, legend { font-size: 13px; }
+  input { height: 46px; font-size: 16px; }
+  .input-unit span { top: 15px; }
+  fieldset { gap: 8px; }
+  fieldset button { min-height: 42px; }
+  .primary { min-height: 48px; }
+  .demo-button { min-height: 44px; font-size: 13px; }
+  .demo-note { font-size: 11px; }
+  .route-list { gap: 10px; margin-top: 16px; }
+  .route-list .route-card { padding: 12px 11px; }
+  .route-heading { align-items: flex-start; gap: 8px; }
+  .route-badges { flex-wrap: wrap; justify-content: flex-end; }
+  .metrics { flex-wrap: wrap; gap: 8px 16px; }
+  .risk-summary { gap: 10px 6px; }
+  .forecast-control { padding: 10px 11px 9px; }
+  .forecast-control > div:first-child { font-size: 11px; }
+  .forecast-control input { min-height: 32px; }
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 6px 10px;
+    font-size: 9px;
+  }
+  .legend span { gap: 4px; }
+}
+
+/* Dark-blue theme */
+:root {
+  color: #eaf2ff;
+  background: #0a1733;
+}
+body { background: #0a1733; }
+header {
+  background: #0d1e42;
+  border-bottom-color: #1d3a70;
+}
+.brand-mark {
+  width: 46px;
+  height: 38px;
+  background: transparent;
+  border-radius: 6px;
+}
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+header h1 { color: #f3f7ff; }
+.eyebrow { color: #83aae8; }
+
+.workspace { background: linear-gradient(160deg, #0a1733, #0d2249 60%, #0a1a3a); }
+aside {
+  background: #0e2147;
+  border-right-color: #1d3a70;
+  color: #eaf2ff;
+}
+label, legend { color: #b9cdef; }
+input {
+  border-color: #2c4a7f;
+  background: #102952;
+  color: #f3f7ff;
+}
+input:focus { border-color: #5f8fe0; box-shadow: 0 0 0 3px rgba(95,143,224,.22); }
+.input-unit span { color: #9bb6e2; }
+fieldset button {
+  border-color: #2c4a7f;
+  background: #102952;
+  color: #c3d6f5;
+}
+fieldset button.active { border-color: #4d78c6; background: #1b3e7a; color: #fff; }
+.primary { background: #2f6df0; color: #fff; }
+.error { color: #ff9b9b; }
+.demo-button {
+  border-color: #2c4a7f;
+  background: #102952;
+  color: #c3d6f5;
+}
+.demo-button:hover,
+.demo-button[aria-pressed="true"] { border-color: #c34a44; background: #3a1c2a; color: #ffb3ad; }
+.demo-button:focus-visible { outline-color: #ff9b9b; }
+.demo-note { color: #9bb6e2; }
+
+.route-list .route-card {
+  border-color: #2c4a7f;
+  background: #102952;
+  color: #eaf2ff;
+}
+.route-list .route-card:hover { border-color: #5f8fe0; }
+.route-list .route-card:focus-visible { outline-color: #5f8fe0; }
+.route-list .route-card.selected { border-color: #5f8fe0; background: #16346d; }
+.route-heading span { color: #cfe3ff; background: #1b3e7a; }
+.route-heading span.selected-badge { color: #fff; background: #2f6df0; }
+.metrics { color: #a9bfdf; }
+.metrics b { color: #fff; }
+.road-summary { color: #9bb6e2; }
+.risk-summary { border-top-color: #25477d; color: #9bb6e2; }
+.risk-summary b { color: #fff; }
+
+.map-panel {
+  border: 6px solid #0d1e42;
+  border-radius: 14px;
+  background: #0d1e42;
+}
+.leaflet-container { background: #10254d; }
+
+.weather-toolbar {
+  border-color: #2c4a7f;
+  background: rgba(14, 33, 71, .94);
+}
+.weather-chip { color: #c3d6f5; }
+.weather-chip:hover:not(:disabled) { background: #1b3e7a; }
+.weather-chip.active { border-color: #4d78c6; background: #1b3e7a; color: #fff; }
+.weather-chip:focus-visible { outline-color: #5f8fe0; }
+.alert-count { background: #1b3e7a; color: #cfe3ff; }
+.weather-chip.active .alert-count { background: #2f6df0; color: #fff; }
+.radar-note { background: rgba(14, 33, 71, .94); color: #c3d6f5; }
+.radar-note.error { color: #ff9b9b; }
+.toolbar-popover {
+  border-color: #2c4a7f;
+  background: rgba(14, 33, 71, .97);
+  color: #c3d6f5;
+}
+.toolbar-popover strong { color: #fff; }
+
+.forecast-control {
+  border-color: #2c4a7f;
+  background: rgba(14, 33, 71, .96);
+  color: #c3d6f5;
+}
+.forecast-control > div:first-child { color: #b9cdef; }
+.legend { color: #b9cdef; }
+
+@media (max-width: 520px) {
+  .brand-mark { width: 42px; height: 42px; }
 }

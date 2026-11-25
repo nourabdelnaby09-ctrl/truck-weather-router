@@ -378,7 +378,7 @@ function App() {
   return (
     <main>
       <header>
-        <div className="brand-mark">T</div>
+        <div className="brand-mark"><img src="/truck-logo.png" alt="TruckWeather logo" /></div>
         <div>
           <p className="eyebrow">Dispatch intelligence</p>
           <h1>Weather-Aware Truck Routing</h1>
