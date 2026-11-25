@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import L from "leaflet";
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { rankRoutes, withRisk } from "./lib/risk.js";
+import { toLeafletPositions } from "./lib/geometry.js";
 import "./styles.css";
 
 const configuredApiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -83,7 +84,7 @@ function FitRoutes({ routes, origin, destination }) {
     const points = [
       ...(origin ? [[origin.lat, origin.lon]] : []),
       ...(destination ? [[destination.lat, destination.lon]] : []),
-      ...routes.flatMap((route) => route.geometry.map(([lon, lat]) => [lat, lon])),
+      ...routes.flatMap((route) => toLeafletPositions(route.geometry)),
     ];
     if (points.length) {
       map.fitBounds(points, { padding: [35, 35] });
@@ -126,11 +127,17 @@ function CorridorHeatLayer({ cells }) {
       L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0, 0]));
       const radius = Math.max(7, Math.min(28, 22 - map.getZoom()));
       context.globalAlpha = 0.42;
-      cells.forEach((cell) => {
-        const point = map.latLngToContainerPoint([cell.lat, cell.lon]);
-        context.fillStyle = RISK_COLORS[cell.risk] || RISK_COLORS.Low;
+      // One path per risk color: fewer canvas state changes per redraw.
+      Object.keys(RISK_COLORS).forEach((level) => {
+        const group = cells.filter((cell) => cell.risk === level);
+        if (!group.length) return;
+        context.fillStyle = RISK_COLORS[level];
         context.beginPath();
-        context.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+        group.forEach((cell) => {
+          const point = map.latLngToContainerPoint([cell.lat, cell.lon]);
+          context.moveTo(point.x + radius, point.y);
+          context.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+        });
         context.fill();
       });
       context.globalAlpha = 1;
@@ -231,6 +238,27 @@ function WeatherToolbar({
     </div>
   );
 }
+
+const RouteLine = memo(function RouteLine({ route, isSelected, onSelect }) {
+  const positions = useMemo(() => toLeafletPositions(route.geometry), [route.geometry]);
+  return (
+    <Polyline
+      positions={positions}
+      pathOptions={{
+        color: isSelected ? "#235dbe" : "#8a96a8",
+        weight: isSelected ? 7 : 4,
+        opacity: isSelected ? 0.95 : 0.55,
+      }}
+      eventHandlers={{ click: () => onSelect(route.id) }}
+    >
+      <Popup>
+        <strong>{route.name}</strong><br />
+        {route.distanceMiles} mi · {formatDuration(route.durationSeconds)}<br />
+        Severe: {route.severeMiles} mi · No Travel: {route.noTravelMiles} mi
+      </Popup>
+    </Polyline>
+  );
+});
 
 function App() {
   const [form, setForm] = useState({
@@ -533,23 +561,14 @@ function App() {
               />
             )}
             {data && <FitRoutes routes={activeRoutes} origin={data.origin} destination={data.destination} />}
-            {activeRoutes.map((route) => {
-              const isSelected = route.id === selectedRoute?.id;
-              return (
-              <Polyline
+            {activeRoutes.map((route) => (
+              <RouteLine
                 key={route.id}
-                positions={route.geometry.map(([lon, lat]) => [lat, lon])}
-                pathOptions={{ color: isSelected ? "#235dbe" : "#8a96a8", weight: isSelected ? 7 : 4, opacity: isSelected ? 0.95 : 0.55 }}
-                eventHandlers={{ click: () => setSelectedRouteId(route.id) }}
-              >
-                <Popup>
-                  <strong>{route.name}</strong><br />
-                  {route.distanceMiles} mi · {formatDuration(route.durationSeconds)}<br />
-                  Severe: {route.severeMiles} mi · No Travel: {route.noTravelMiles} mi
-                </Popup>
-              </Polyline>
-              );
-            })}
+                route={route}
+                isSelected={route.id === selectedRoute?.id}
+                onSelect={setSelectedRouteId}
+              />
+            ))}
             <CorridorHeatLayer cells={corridorCells} />
             {selectedRoute?.checkpoints.map((point, index) => (
               <CircleMarker
