@@ -158,6 +158,27 @@ function CorridorHeatLayer({ cells }) {
   return null;
 }
 
+const LAYER_ICONS = {
+  weather: ["M7 16h10a4 4 0 0 0 .3-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 16Z", "M8 19v2", "M12 19v2", "M16 19v2"],
+  temp: ["M14 14V5a2 2 0 0 0-4 0v9a4 4 0 1 0 4 0Z", "M12 9v6"],
+  wind: ["M3 8h11a3 3 0 1 0-3-3", "M3 12h15a3 3 0 1 1-3 3", "M3 16h7"],
+  rain: ["M7 15h10a4 4 0 0 0-.4-8 5.5 5.5 0 0 0-10.2 1.4A3.4 3.4 0 0 0 7 15Z", "M8 18l-1 3", "M12 18l-1 3", "M16 18l-1 3"],
+  snow: ["M7 15h10a4 4 0 0 0-.4-8 5.5 5.5 0 0 0-10.2 1.4A3.4 3.4 0 0 0 7 15Z", "M12 18v4", "M10 20l4-4", "M14 20l-4-4"],
+  elevation: ["M3 19l6-10 4 6 2-3 6 7H3Z", "M7 11l2-2 3 4"],
+  alerts: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4", "M12 3v2"],
+  legend: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z", "M12 11v5", "M12 8h.01"],
+};
+
+function LayerIcon({ name }) {
+  return (
+    <svg className="weather-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      {(LAYER_ICONS[name] || LAYER_ICONS.legend).map((path) => (
+        <path key={path} d={path} />
+      ))}
+    </svg>
+  );
+}
+
 function WeatherToolbar({
   mapLayers,
   setMapLayers,
@@ -167,14 +188,14 @@ function WeatherToolbar({
   forecastHour,
 }) {
   const chips = [
-    ["weather", "☂", "Weather"],
-    ["temp", "°", "Temp"],
-    ["wind", "↗", "Wind"],
-    ["rain", "▤", "Rain"],
-    ["snow", "❄", "Snow"],
-    ["elevation", "⌁", "Elevation"],
-    ["alerts", "!", "Alerts"],
-    ["legend", "◉", "Legend"],
+    ["weather", "Weather"],
+    ["temp", "Temp"],
+    ["wind", "Wind"],
+    ["rain", "Rain"],
+    ["snow", "Snow"],
+    ["elevation", "Elevation"],
+    ["alerts", "Alerts"],
+    ["legend", "Legend"],
   ];
 
   function toggle(key) {
@@ -184,7 +205,7 @@ function WeatherToolbar({
   return (
     <div className="weather-toolbar-wrap">
       <div className="weather-toolbar" role="toolbar" aria-label="Map weather layers">
-        {chips.map(([key, icon, label]) => {
+        {chips.map(([key, label]) => {
           const disabled = key === "weather" && (radarLoading || Boolean(radarError));
           return (
             <button
@@ -196,7 +217,7 @@ function WeatherToolbar({
               onClick={() => toggle(key)}
               title={key === "weather" && radarLoading ? "Loading radar" : undefined}
             >
-              <span className="weather-chip-icon" aria-hidden="true">{icon}</span>
+              <LayerIcon name={key} />
               <span>{label}</span>
               {key === "alerts" && <span className="alert-count">{alertCheckpoints.length}</span>}
             </button>

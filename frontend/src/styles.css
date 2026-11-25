@@ -454,3 +454,129 @@ fieldset button.active { border-color: #4d78c6; background: #1b3e7a; color: #fff
 @media (max-width: 520px) {
   .brand-mark { width: 42px; height: 42px; }
 }
+
+/* Modern refresh */
+:root { color-scheme: dark; }
+body {
+  background:
+    radial-gradient(circle at 12% -10%, rgba(47, 109, 240, .28), transparent 42%),
+    radial-gradient(circle at 95% 0%, rgba(28, 174, 255, .14), transparent 38%),
+    #070f24;
+}
+header {
+  background: rgba(11, 27, 58, .82);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .06);
+}
+.brand-mark {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+header h1 { font-weight: 750; letter-spacing: -.02em; }
+.workspace {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(47, 109, 240, .10), transparent 55%),
+    linear-gradient(160deg, #0a1733, #0b1d3f 55%, #070f24);
+}
+aside { background: rgba(11, 27, 58, .72); backdrop-filter: blur(14px); }
+
+input {
+  border-color: rgba(140, 175, 235, .22);
+  background: rgba(9, 22, 49, .8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+input:hover { border-color: rgba(140, 175, 235, .4); }
+fieldset button, .demo-button {
+  border-color: rgba(140, 175, 235, .2);
+  background: rgba(255, 255, 255, .04);
+  border-radius: 10px;
+  transition: transform .18s ease, border-color .18s ease, background-color .18s ease;
+}
+fieldset button:hover:not(.active), .demo-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(140, 175, 235, .45);
+  background: rgba(255, 255, 255, .08);
+}
+.primary {
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f8dff, #2f6df0);
+  box-shadow: 0 8px 20px rgba(47, 109, 240, .35);
+  letter-spacing: .01em;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 12px 26px rgba(47, 109, 240, .45);
+}
+
+.route-list .route-card {
+  border-color: rgba(140, 175, 235, .18);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(20, 45, 94, .92), rgba(13, 31, 67, .92));
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.route-list .route-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(95, 143, 224, .6);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .28);
+}
+.route-list .route-card.selected {
+  border-color: #5f8fe0;
+  background: linear-gradient(145deg, rgba(28, 62, 124, .96), rgba(16, 40, 84, .96));
+  box-shadow: 0 0 0 1px rgba(95, 143, 224, .35), 0 14px 30px rgba(0, 0, 0, .32);
+}
+.metrics, .risk-summary, .forecast-control b { font-variant-numeric: tabular-nums; }
+
+.map-panel {
+  border-color: rgba(140, 175, 235, .18);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+}
+.weather-toolbar {
+  border-color: rgba(140, 175, 235, .22);
+  background: rgba(11, 27, 58, .82);
+  backdrop-filter: blur(16px);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .28);
+}
+.weather-chip {
+  border-radius: 999px;
+  transition: transform .16s ease, background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.weather-chip:hover:not(:disabled) { transform: translateY(-1px); }
+.weather-chip.active {
+  box-shadow: inset 0 0 0 1px rgba(95, 143, 224, .5), 0 4px 14px rgba(47, 109, 240, .25);
+}
+.weather-chip-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toolbar-popover {
+  border-color: rgba(140, 175, 235, .22);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+}
+.forecast-control {
+  border-color: rgba(140, 175, 235, .22);
+  border-radius: 14px;
+  background: rgba(11, 27, 58, .86);
+  backdrop-filter: blur(16px);
+}
+.forecast-control input { accent-color: #4f8dff; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+@media (max-width: 520px) {
+  .route-list .route-card:hover { transform: none; }
+  .primary:hover:not(:disabled) { transform: none; }
+}
