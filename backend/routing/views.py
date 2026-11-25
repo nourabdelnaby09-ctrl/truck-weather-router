@@ -307,7 +307,8 @@ def plan_route(request):
             severe_miles = 0
             high_miles = 0
             no_travel_miles = 0
-            risk_values = []
+            weighted_risk = 0
+            measured_miles = 0
 
             arrivals = [
                 {**point, "arrival": (departure + timedelta(seconds=duration_seconds * point["progress"])).isoformat()}
@@ -318,15 +319,17 @@ def plan_route(request):
                 risk = point["risk"]
                 next_distance = checkpoints[checkpoint_index + 1]["distance"] if checkpoint_index + 1 < len(checkpoints) else distance_miles
                 segment_miles = max(0, next_distance - point["distance"])
-                if risk == "Severe":
+                # Spec: Severe and No Travel miles both count as Severe miles.
+                if risk in ("Severe", "No Travel"):
                     severe_miles += segment_miles
-                if risk == "High":
-                    high_miles += segment_miles
                 if risk == "No Travel":
                     no_travel_miles += segment_miles
-                risk_values.append(RISK_ORDER[risk])
+                if risk == "High":
+                    high_miles += segment_miles
+                weighted_risk += RISK_ORDER[risk] * segment_miles
+                measured_miles += segment_miles
 
-            average_risk = sum(risk_values) / len(risk_values) if risk_values else 1
+            average_risk = weighted_risk / measured_miles if measured_miles else 1
             results.append({
                 "id": route_index,
                 "name": f"Route {route_index}",
@@ -343,7 +346,6 @@ def plan_route(request):
             })
 
         results.sort(key=lambda r: (
-            r["noTravelMiles"],
             r["severeMiles"],
             r["highMiles"],
             r["averageRisk"],
