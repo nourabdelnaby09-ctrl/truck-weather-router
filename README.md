@@ -1,71 +1,136 @@
 # Weather-Aware Truck Routing
 
-React + Django application that compares three driving routes and evaluates weather risk along each route.
+A React + Django decision tool that compares three driving routes and recommends the one with the lowest weather risk for a given load and departure time.
 
-## Features
+## Links
 
-- Geocoding and routing with public OpenStreetMap APIs
-- Open-Meteo hourly weather forecasts
-- 10, 25, or 50 mile route checkpoint sampling
-- Wind, rain, snow, and truck-load-aware risk classification
-- Road-name summaries for each route option
-- Route ranking by No Travel miles, severe miles, high miles, average risk, then travel time
-- Interactive route map with a continuous risk-weighted weather heat layer
-- 0–48 hour forecast slider, backed by up to 7 forecast days
-- Map toolbar toggles for RainViewer radar, checkpoint weather labels, elevation, alerts, and the risk legend
-- Possible-ice checkpoints highlighted with an orange ring
-- RainViewer radar tiles scale above their native zoom limit so the overlay remains visible when zooming in
-- Optional simulated no-travel preview in Cheyenne, Wyoming (55 mph); explicitly separate from live forecasts and route risk calculations
+- **Source:** https://github.com/nourabdelnaby09-ctrl/truck-weather-router
+- **Deployed API:** https://truck-weather-router-c9820.containers.snapdeploy.app
+- **Deployed frontend:** https://truck-weather-frontend-c9820.containers.snapdeploy.app (needs a fresh redeploy — see [Deployment](#deployment))
+- **Loom walkthrough:** pending a share URL — recording outline in `LOOM_SCRIPT.md`
+
+---
+
+## Architecture
+
+```
+Browser (React + Vite)
+  │
+  ├─ form: origin, destination, departure, load, interval (10/25/50)
+  │
+  ├─ POST /api/routes/  ───────────────┐
+  ├─ POST /api/heatmap/ (slider)       │
+  └─ POST /api/corridor/ (slider)      │
+                                       ▼
+                            Django (plain views)
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        ▼                              ▼                              ▼
+   Nominatim                     OSRM directions               Open-Meteo hourly
+   (geocoding)                   (3 route options)             (wind/rain/snow/temp)
+                                                                    │
+                                                     risk.js (single source of truth
+                                                     for UI classification + ranking)
+                                                                    │
+                                          canvas corridor grid + checkpoint markers
+```
+
+**Backend:** Django 5, `django-cors-headers`, `requests`, SQLite (Django internals only — no trip data is stored). Gunicorn in production.
+**Frontend:** React 19, Vite, Leaflet / react-leaflet, plain CSS. No component library, no new UI dependencies.
+**External APIs:** all free, no keys in the frontend. Nominatim (geocoding), OSRM demo server (routing), Open-Meteo (weather), RainViewer (radar tiles).
+
+---
+
+## How each spec rule maps to code
+
+| Spec requirement | Where it lives |
+|---|---|
+| Four on-screen inputs + 10/25/50 interval selector | `frontend/src/main.jsx` form state and fieldset; default 25 |
+| Exactly 3 route options | `backend/routing/views.py` → `plan_route()` (direct + 2 via-waypoint variants, deduped by distance) |
+| Checkpoints every 10/25/50 mi, origin + destination always included | `interpolate_geometry()` |
+| ETA per checkpoint from router duration | `arrival = departure + duration × progress` in `plan_route()` |
+| Hourly weather at checkpoint ETA | `weather_at()` (nearest UTC hour, 7-day forecast) |
+| Wind / rain / snow thresholds | `RISK_THRESHOLDS` in `frontend/src/lib/risk.js` (named table) and `classify_condition()` in `views.py` |
+| Load rules (escalation only) | `windLevel()` in `risk.js`; wind branch of `classify_condition()` in `views.py` |
+| Worst-of-three classification | `worstLevel()` in `risk.js`; `max(..., key=RISK_ORDER)` in `views.py` |
+| Ranking: Severe → High → weighted avg risk → time | `rankRoutes()` in `risk.js`; `results.sort(...)` in `views.py` |
+| 0–48h slider, 100 ms debounce, ±1h prefetch | `main.jsx` slider effect |
+| Corridor grid within ~25 mi, canvas overlay, cached by cell/hour | `/api/corridor/` + `corridor_cells()` + `batch_weather_at()`; `CorridorHeatLayer` in `main.jsx` |
+| Loading/error states | `loading`, `error`, `forecastLoading/Error`, `corridorLoading`, `radarLoading/Error` |
+
+Tests: `npm test` (vitest, `src/lib/*.test.js`) and `python backend/manage.py test` (Django).
+
+---
+
+## Assumptions
+
+- **Severe miles include No Travel miles.** The spec says both count as Severe; `noTravelMiles` is still returned for context but is not a separate ranking key.
+- **Average risk is weighted by segment miles** (risk level number × segment length ÷ total measured miles), not a mean of checkpoints.
+- A checkpoint's risk applies to the segment **from that checkpoint to the next one**; the final checkpoint covers the remaining distance to the destination.
+- ETA is derived from the router's **total duration** and linear `progress` along the scaled polyline, then snapped to the nearest forecast hour. The router does not return per-segment durations on the demo OSRM endpoint, so a flat proportion is used.
+- Open-Meteo is called with `timezone=UTC`; naive `datetime-local` input is treated as UTC.
+- Weather and corridor cells are cached **1 hour per rounded coordinate/hour**, per process (LocMemCache). Cache is lost on restart.
+- The corridor grid uses a 0.25° step (~17–25 mi depending on latitude), max 500 cells, filtered to within 25 mi of the route.
+- The optional **"Preview No-Travel demo"** button is a labeled sandbox marker only. It never enters risk scoring or the API response.
+
+---
+
+## API
+
+### `POST /api/routes/` (alias: `/api/plan-route/`)
+Request:
+```json
+{"origin":"Chicago, IL","destination":"Detroit, MI","departure":"2026-11-26T08:00:00Z","loadWeight":35000,"intervalMiles":25}
+```
+Response: origin/destination + `routes[]` with `id`, `name`, `roadSummary`, `distanceMiles`, `durationSeconds`, `eta`, `geometry` (GeoJSON coordinate array), `checkpoints[]`, `severeMiles`, `highMiles`, `noTravelMiles`, `averageRisk`, `recommended`.
+
+### `POST /api/heatmap/`
+Shifts each checkpoint's arrival by `forecastHour` (0–48) and returns recomputed risk.
+
+### `POST /api/corridor/`
+Request adds `geometry` and `departure`; returns `{hour, cells:[{lat,lon,risk,wind,rain,snow}]}` for the canvas heatmap.
+
+Error codes: `400` bad input · `404` no routes · `422` trip outside 7-day forecast · `503` weather provider unavailable.
+
+---
 
 ## Run locally
-
-### Backend
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python backend/manage.py migrate
-python backend/manage.py runserver
+python backend/manage.py test
+python backend/manage.py runserver        # http://127.0.0.1:8000
 ```
-
-The API is available at `http://127.0.0.1:8000/api/plan-route/`.
-
-### Frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm test
+npm run dev                               # http://localhost:5173
 ```
 
-Open `http://localhost:5173`.
+Configuration via env: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `ROUTING_API_URL`, `VITE_API_URL`.
 
-## Links
+---
 
-- **Source repository:** https://github.com/nourabdelnaby09-ctrl/truck-weather-router
-- **Live demo:** Not deployed. A ready-to-use Render blueprint is included at `render.yaml`; free-tier hosting required payment verification on the available account, so the app is demonstrated locally instead.
-- **Loom walkthrough:** pending a share URL.
+## Deployment
 
-## Configuration
+Deployed on **SnapDeploy** using two free containers:
 
-No API keys are required for the default public providers:
+| Container | Branch | Root directory | Build | Env |
+|---|---|---|---|---|
+| `truck-weather-router-c9820` (API) | `master` | `/` | root `Dockerfile` → Gunicorn | Django env vars |
+| `truck-weather-frontend-c9820` (SPA) | `frontend-deploy` | `frontend` | `frontend/Dockerfile` → nginx | `VITE_API_URL` |
 
-- Nominatim geocoding
-- OSRM routing
-- Open-Meteo weather
+Backend is live and verified (`POST /api/routes/` returns 3 routes). The frontend container currently serves Django after an auto-redeploy and needs a fresh redeploy with root directory `frontend`; a dedicated `frontend/Dockerfile` has been added for that purpose. `render.yaml` is also included as an alternative blueprint.
 
-The default OSRM demo server is intended for limited evaluation and can rate-limit traffic. For hosted use, set `ROUTING_API_URL` to a production OSRM-compatible routing service endpoint. Set `DJANGO_ALLOWED_HOSTS` and `CORS_ALLOWED_ORIGINS` in production.
+Rate limits: the OSRM demo server and Nominatim are for evaluation traffic and may rate-limit. Set `ROUTING_API_URL` to a production OSRM-compatible service before serving real traffic.
 
-## API
+---
 
-- `POST /api/plan-route/` geocodes the trip, samples route checkpoints, and scores weather.
-- `POST /api/heatmap/` accepts `{ "forecastHour": 0, "loadWeight": 35000, "routes": [...] }` using the route/checkpoint data returned by the planning endpoint. `forecastHour` shifts each checkpoint's arrival time from 0 to 48 hours; the frontend updates checkpoint markers and the continuous corridor heat layer.
+## Loom walkthrough
 
-Weather responses are cached in-process for one hour. The cache is per application process and is cleared on restart.
-
-## Deploying to Render
-
-The root `render.yaml` defines a Django API service and a Vite static site. Set a generated `DJANGO_SECRET_KEY` and deploy the blueprint. The API CORS origin is read from the frontend service host in the blueprint, so renaming the Render static service requires updating that reference. Configure `ROUTING_API_URL` to a production routing provider before serving public traffic. SQLite is ephemeral on Render, so configure a managed database before adding persistent application data.
-
-The walkthrough demonstrates the app running locally (both servers) since no hosted instance is available.
+See `LOOM_SCRIPT.md` for a minute-by-minute script covering the live demo, risk rules, ranking, heatmap slider, tests and repository.
