@@ -576,15 +576,6 @@ function App() {
             {error && <p className="error">{error}</p>}
           </form>
 
-          <WeatherToolbar
-            mapLayers={mapLayers}
-            setMapLayers={setMapLayers}
-            radarLoading={radarLoading}
-            radarError={radarError}
-            alertCheckpoints={alertCheckpoints}
-            forecastHour={forecastHour}
-          />
-
           {activeRoutes.length > 0 && (
             <div className="route-list">
               {activeRoutes.map((route) => (
@@ -732,6 +723,14 @@ function App() {
           </MapContainer>
         </section>
       </section>
+      <WeatherToolbar
+        mapLayers={mapLayers}
+        setMapLayers={setMapLayers}
+        radarLoading={radarLoading}
+        radarError={radarError}
+        alertCheckpoints={alertCheckpoints}
+        forecastHour={forecastHour}
+      />
     </main>
   );
 }
