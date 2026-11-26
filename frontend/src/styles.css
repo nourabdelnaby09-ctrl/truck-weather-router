@@ -354,7 +354,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
-    padding: 12px 10px calc(12px + env(safe-area-inset-bottom));
+    padding: 12px 10px calc(80px + env(safe-area-inset-bottom));
     border: 0;
     border-radius: 0 18px 18px 0;
     box-shadow: 12px 0 40px rgba(0, 0, 0, .45);
@@ -519,7 +519,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .brand-mark { flex: 0 0 36px; width: 36px; height: 36px; }
   header h1 { font-size: clamp(15px, 4.5vw, 18px); }
   .eyebrow { font-size: 9px; }
-  aside { padding: 12px 10px calc(12px + env(safe-area-inset-bottom)); }
+  aside { padding: 12px 10px calc(80px + env(safe-area-inset-bottom)); }
   form { gap: 12px; }
   label, legend { font-size: 13px; }
   input { height: 46px; font-size: 16px; }
@@ -791,7 +791,7 @@ fieldset button:hover:not(.active), .demo-button:hover:not(:disabled) {
 
 @media (min-width: 801px) {
   aside { backdrop-filter: none; }
-  aside > .weather-toolbar-wrap {
+  .weather-toolbar-wrap {
     position: fixed;
     top: 92px;
     left: 346px;
