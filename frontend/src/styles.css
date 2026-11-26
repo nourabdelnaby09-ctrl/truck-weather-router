@@ -180,6 +180,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   cursor: pointer;
   transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
+.mobile-only-layer { display: none; }
 .weather-chip:hover:not(:disabled) { background: #edf3fd; }
 .weather-chip.active {
   border-color: #b7ccef;
@@ -235,6 +236,9 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
 .toolbar-popover strong { color: #172033; font-size: 12px; }
 .toolbar-popover ul { display: grid; gap: 7px; padding-left: 18px; margin: 10px 0 0; }
 .toolbar-popover p { margin: 9px 0 0; line-height: 1.5; }
+.toolbar-risk-legend { display: flex; flex-wrap: wrap; gap: 9px 13px; margin-top: 10px; }
+.toolbar-risk-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.toolbar-risk-legend i { width: 10px; height: 10px; border-radius: 50%; }
 .checkpoint-label {
   padding: 2px 5px !important;
   border: 1px solid rgba(190, 201, 218, .9) !important;
@@ -287,16 +291,88 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
 .legend span { display: flex; align-items: center; gap: 5px; }
 .legend i { width: 8px; height: 8px; border-radius: 50%; }
 
+.mobile-tools-toggle { display: none; }
+.mobile-tools-backdrop { display: none; }
+
 @media (max-width: 800px) {
-  .workspace {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(460px, 68svh);
-    height: auto;
+  main { position: relative; height: 100dvh; min-height: 100dvh; overflow: hidden; }
+  header {
+    position: absolute;
+    z-index: 700;
+    top: 0;
+    left: 0;
+    right: 0;
   }
-  aside { min-width: 0; border-right: 0; border-bottom: 1px solid #dfe4ec; }
-  .map-panel { min-width: 0; min-height: 460px; }
+  .workspace {
+    display: block;
+    height: 100dvh;
+  }
+  aside {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    height: 25dvh;
+    max-height: 25dvh;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, .45);
+    transform: translateY(105%);
+    transition: transform .25s ease;
+  }
+  main.mobile-tools-open aside { transform: translateY(0); }
+  .map-panel { height: 100dvh; min-width: 0; min-height: 0; }
   .legend { gap: 7px; flex-wrap: wrap; }
-  .weather-toolbar-wrap { left: 8px; right: 8px; top: max(8px, env(safe-area-inset-top)); }
+  .mobile-tools-toggle {
+    position: fixed;
+    display: grid;
+    place-items: center;
+    left: 12px;
+    top: calc(68px + env(safe-area-inset-top) + 12px);
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    border: 1px solid rgba(140, 175, 235, .28);
+    border-radius: 12px;
+    background: rgba(11, 27, 58, .86);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+    backdrop-filter: blur(14px);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-tools-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .mobile-tools-toggle:focus-visible { outline: 3px solid #8bb5ff; outline-offset: 3px; }
+  .mobile-tools-backdrop {
+    position: fixed;
+    display: block;
+    inset: 0;
+    z-index: 850;
+    border: 0;
+    background: rgba(3, 10, 25, .38);
+    opacity: 0;
+    animation: mobile-backdrop-in .2s ease forwards;
+  }
+  .weather-toolbar-wrap {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: calc(25dvh + 8px);
+    z-index: 950;
+    transform: translateY(150%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .25s ease, opacity .2s ease;
+  }
+  main.mobile-tools-open .weather-toolbar-wrap { transform: none; opacity: 1; pointer-events: auto; }
   .weather-toolbar {
     width: 100%;
     overflow-x: auto;
@@ -305,17 +381,31 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     border-radius: 14px;
   }
   .weather-toolbar::-webkit-scrollbar { display: none; }
-  .weather-chip { min-height: 42px; padding: 0 10px; }
+  .weather-toolbar-title { height: 44px; }
+  .weather-chip { min-height: 44px; padding: 0 10px; }
+  .mobile-only-layer { display: inline-flex; }
   .toolbar-popovers {
     top: 52px;
     width: min(390px, calc(100vw - 32px));
     max-height: 40vh;
   }
   .forecast-control {
+    position: fixed;
     left: 8px;
     right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom));
+    bottom: calc(25dvh + 62px);
+    z-index: 940;
+    transform: translateY(150%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .25s ease, opacity .2s ease;
   }
+  main.mobile-tools-open .forecast-control { transform: none; opacity: 1; pointer-events: auto; }
+  .forecast-control input { min-height: 44px; }
+}
+
+@keyframes mobile-backdrop-in {
+  to { opacity: 1; }
 }
 
 @media (max-width: 520px) {
@@ -328,8 +418,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .brand-mark { flex: 0 0 36px; width: 36px; height: 36px; }
   header h1 { font-size: clamp(15px, 4.5vw, 18px); }
   .eyebrow { font-size: 9px; }
-  .workspace { grid-template-rows: auto minmax(430px, 68svh); }
-  aside { padding: 16px 14px; }
+  aside { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
   form { gap: 12px; }
   label, legend { font-size: 13px; }
   input { height: 46px; font-size: 16px; }
@@ -589,4 +678,12 @@ fieldset button:hover:not(.active), .demo-button:hover:not(:disabled) {
 @media (max-width: 520px) {
   .route-list .route-card:hover { transform: none; }
   .primary:hover:not(:disabled) { transform: none; }
+}
+
+@media (max-width: 800px) {
+  .map-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
