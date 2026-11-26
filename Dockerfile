@@ -12,4 +12,4 @@ COPY . /app/
 
 EXPOSE 8000
 
-CMD sh -c "python backend/manage.py migrate && gunicorn --chdir backend --bind 0.0.0.0:${PORT:-8000} config.wsgi:application"
+CMD ["python", "backend/start.py"]
