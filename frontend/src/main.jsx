@@ -307,7 +307,7 @@ function App() {
   const [windDemo, setWindDemo] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const drawerRef = useRef(null);
-  const [toolsScrolled, setToolsScrolled] = useState(false);
+  const [toolsScrollTop, setToolsScrollTop] = useState(0);
   const [mapLayers, setMapLayers] = useState({
     weather: false,
     temp: false,
@@ -501,7 +501,10 @@ function App() {
   }
 
   return (
-    <main className={`${mobileToolsOpen ? "mobile-tools-open " : ""}${toolsScrolled ? "tools-scrolled" : ""}`}>
+    <main
+      className={mobileToolsOpen ? "mobile-tools-open" : undefined}
+      style={{ "--tools-lift": `${Math.min(toolsScrollTop, 180)}px` }}
+    >
       <header>
         <div className="brand-mark"><img src="/truck-logo.png" alt="TruckWeather logo" /></div>
         <div>
@@ -535,7 +538,7 @@ function App() {
         <aside
           id="mobile-tools-drawer"
           ref={drawerRef}
-          onScroll={(event) => setToolsScrolled(event.currentTarget.scrollTop > 24)}
+          onScroll={(event) => setToolsScrollTop(event.currentTarget.scrollTop)}
         >
           <form onSubmit={submit}>
             <label>Origin
