@@ -166,6 +166,7 @@ const LAYER_ICONS = {
   snow: ["M7 15h10a4 4 0 0 0-.4-8 5.5 5.5 0 0 0-10.2 1.4A3.4 3.4 0 0 0 7 15Z", "M12 18v4", "M10 20l4-4", "M14 20l-4-4"],
   elevation: ["M3 19l6-10 4 6 2-3 6 7H3Z", "M7 11l2-2 3 4"],
   alerts: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4", "M12 3v2"],
+  legend: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z", "M12 11v5", "M12 8h.01"],
 };
 
 function LayerIcon({ name }) {
@@ -193,6 +194,7 @@ function WeatherToolbar({
     ["snow", "Snow"],
     ["elevation", "Elevation"],
     ["alerts", "Alerts"],
+    ["legend", "Legend"],
   ];
 
   function toggle(key) {
@@ -213,7 +215,7 @@ function WeatherToolbar({
             <button
               type="button"
               key={key}
-              className={`weather-chip${mapLayers[key] ? " active" : ""}`}
+              className={`weather-chip${mapLayers[key] ? " active" : ""}${key === "legend" ? " mobile-only-layer" : ""}`}
               aria-pressed={mapLayers[key]}
               onClick={() => toggle(key)}
             >
@@ -226,20 +228,33 @@ function WeatherToolbar({
       </div>
       {radarLoading && <p className="radar-note">Loading radar…</p>}
       {radarError && <p className="radar-note error">{radarError}</p>}
-      {mapLayers.alerts && (
+      {(mapLayers.alerts || mapLayers.legend) && (
         <div className="toolbar-popovers">
-          <section className="toolbar-popover alerts-popover" aria-label="Route weather alerts">
-            <strong>Severe weather alerts ({alertCheckpoints.length})</strong>
-            {alertCheckpoints.length ? (
-              <ul>
-                {alertCheckpoints.map((point, index) => (
-                  <li key={`${point.distance}-${point.arrival}-${index}`}>
-                    <b>{point.risk}</b> · mi {Number(point.distance).toFixed(1)} · {new Date(point.arrival).toLocaleString()}
-                  </li>
+          {mapLayers.alerts && (
+            <section className="toolbar-popover alerts-popover" aria-label="Route weather alerts">
+              <strong>Severe weather alerts ({alertCheckpoints.length})</strong>
+              {alertCheckpoints.length ? (
+                <ul>
+                  {alertCheckpoints.map((point, index) => (
+                    <li key={`${point.distance}-${point.arrival}-${index}`}>
+                      <b>{point.risk}</b> · mi {Number(point.distance).toFixed(1)} · {new Date(point.arrival).toLocaleString()}
+                    </li>
+                  ))}
+                </ul>
+              ) : <p>No severe or no-travel checkpoints for this route.</p>}
+            </section>
+          )}
+          {mapLayers.legend && (
+            <section className="toolbar-popover legend-popover" aria-label="Weather risk legend">
+              <strong>Weather risk</strong>
+              <div className="toolbar-risk-legend">
+                {Object.entries(RISK_COLORS).map(([label, color]) => (
+                  <span key={label}><i style={{ backgroundColor: color }} />{label}</span>
                 ))}
-              </ul>
-            ) : <p>No severe or no-travel checkpoints for this route.</p>}
-          </section>
+              </div>
+              <p>Lighter = lower risk, darker = severe / no travel; orange ring = possible ice.</p>
+            </section>
+          )}
         </div>
       )}
       <span className="sr-only">Forecast offset: {forecastHour} hours</span>
@@ -288,6 +303,7 @@ function App() {
   const [corridorLoading, setCorridorLoading] = useState(false);
   const corridorCache = useRef(new Map());
   const [windDemo, setWindDemo] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [mapLayers, setMapLayers] = useState({
     weather: false,
     temp: false,
@@ -296,10 +312,20 @@ function App() {
     snow: false,
     elevation: false,
     alerts: false,
+    legend: false,
   });
   const [radarTimestamp, setRadarTimestamp] = useState(radarTimestampCache);
   const [radarLoading, setRadarLoading] = useState(!radarTimestampCache);
   const [radarError, setRadarError] = useState("");
+
+  useEffect(() => {
+    if (!mobileToolsOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMobileToolsOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileToolsOpen]);
 
   useEffect(() => {
     let active = true;
@@ -461,7 +487,7 @@ function App() {
   }, [selectedRoute, forecastHour, form.loadWeight, form.departure]);
 
   return (
-    <main>
+    <main className={mobileToolsOpen ? "mobile-tools-open" : ""}>
       <header>
         <div className="brand-mark"><img src="/truck-logo.png" alt="TruckWeather logo" /></div>
         <div>
@@ -470,8 +496,29 @@ function App() {
         </div>
       </header>
 
+      {mobileToolsOpen && (
+        <button
+          type="button"
+          className="mobile-tools-backdrop"
+          aria-label="Close tools"
+          onClick={() => setMobileToolsOpen(false)}
+        />
+      )}
+      <button
+        type="button"
+        className="mobile-tools-toggle"
+        aria-label={mobileToolsOpen ? "Close tools" : "Open tools"}
+        aria-expanded={mobileToolsOpen}
+        aria-controls="mobile-tools-drawer"
+        onClick={() => setMobileToolsOpen((open) => !open)}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
       <section className="workspace">
-        <aside>
+        <aside id="mobile-tools-drawer">
           <form onSubmit={submit}>
             <label>Origin
               <input value={form.origin} onChange={(e) => update("origin", e.target.value)} required />
