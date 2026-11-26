@@ -313,9 +313,9 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     bottom: 0;
     left: 0;
     right: auto;
-    width: 25vw;
-    min-width: 120px;
-    max-width: 170px;
+    width: 50vw;
+    min-width: 0;
+    max-width: none;
     z-index: 900;
     overflow-y: auto;
     overflow-x: hidden;
@@ -352,7 +352,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  main.mobile-tools-open .mobile-tools-toggle { left: clamp(130px, calc(25vw + 10px), 180px); }
+  main.mobile-tools-open .mobile-tools-toggle { left: calc(50vw + 10px); }
   .mobile-tools-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   .mobile-tools-toggle:focus-visible { outline: 3px solid #8bb5ff; outline-offset: 3px; }
   .mobile-tools-backdrop {
