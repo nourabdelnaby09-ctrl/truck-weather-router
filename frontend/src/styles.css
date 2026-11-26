@@ -286,6 +286,40 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   padding: 12px 14px 9px;
 }
 .forecast-control > div:first-child { display: flex; justify-content: space-between; font-size: 12px; color: #536176; }
+.forecast-heading { align-items: flex-start; gap: 12px; }
+.forecast-heading > span { min-width: 0; }
+.forecast-status { display: flex; flex: 0 0 auto; justify-content: flex-end; }
+.forecast-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid rgba(95, 143, 224, .35);
+  border-radius: 999px;
+  background: rgba(47, 109, 240, .12);
+  color: #b9d1ff;
+  font-size: 10px;
+  font-weight: 750;
+}
+.apply-forecast {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 1px solid rgba(140, 175, 235, .28);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f8dff, #2f6df0);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter .16s ease, box-shadow .16s ease;
+}
+.apply-forecast:focus-visible { outline: 3px solid #8bb5ff; outline-offset: 3px; }
+.apply-forecast:disabled { opacity: .65; cursor: not-allowed; }
+.apply-forecast:hover:not(:disabled) { filter: brightness(1.08); }
 .forecast-control input { width: 100%; height: 28px; padding: 0; border: 0; box-shadow: none; }
 .legend { display: flex; gap: 16px; font-size: 10px; color: #536176; margin-top: 4px; }
 .legend span { display: flex; align-items: center; gap: 5px; }
@@ -366,43 +400,56 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     animation: mobile-backdrop-in .2s ease forwards;
   }
   .weather-toolbar-wrap {
-    position: relative;
-    inset: auto;
-    width: 100%;
+    position: fixed;
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    left: 8px;
+    right: auto;
+    width: calc(50vw - 16px);
     min-width: 0;
     max-width: none;
-    z-index: auto;
-    overflow: visible;
-    transform: none;
-    opacity: 1;
-    pointer-events: auto;
-    transition: none;
+    z-index: 960;
+    overflow: hidden;
+    transform: translateX(-105%);
+    opacity: 0;
+    pointer-events: none;
+    transition: top .25s ease, bottom .25s ease, transform .25s ease, opacity .2s ease;
+  }
+  main.mobile-tools-open .weather-toolbar-wrap { transform: none; opacity: 1; pointer-events: auto; }
+  main.tools-scrolled .weather-toolbar-wrap {
+    top: calc(68px + env(safe-area-inset-top) + 8px);
+    bottom: auto;
   }
   .weather-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
     width: 100%;
-    overflow: visible;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
-    border-radius: 0 0 14px 0;
+    border-radius: 14px;
   }
   .weather-toolbar::-webkit-scrollbar { display: none; }
   .weather-toolbar-title {
+    flex: 0 0 auto;
     min-height: 44px;
     height: auto;
     padding: 8px;
-    border-right: 0;
-    border-bottom: 1px solid rgba(140, 175, 235, .3);
+    border-right: 1px solid rgba(140, 175, 235, .3);
+    border-bottom: 0;
     white-space: normal;
   }
   .weather-chip {
-    width: 100%;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: max-content;
     min-height: 44px;
     height: auto;
     padding: 8px;
-    justify-content: flex-start;
-    white-space: normal;
-    text-align: left;
+    justify-content: center;
+    white-space: nowrap;
+    text-align: center;
   }
   .mobile-only-layer { display: inline-flex; }
   .toolbar-popovers {
@@ -435,7 +482,11 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .forecast-control { padding: 10px 8px 8px; overflow-wrap: anywhere; }
   .forecast-control > div:first-child { gap: 4px; flex-wrap: wrap; font-size: 11px; }
   .forecast-control > div:first-child > * { min-width: 0; }
+  .forecast-heading { align-items: flex-start; flex-direction: column; }
+  .forecast-status { justify-content: flex-start; }
+  .forecast-preview-badge { white-space: normal; }
   .forecast-control .legend { display: grid; grid-template-columns: 1fr; gap: 5px; font-size: 10px; }
+  .apply-forecast { min-height: 44px; margin-top: 8px; }
   form { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   form > label { width: 100%; min-width: 0; }
   label, legend { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
