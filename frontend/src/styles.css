@@ -309,22 +309,26 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   }
   aside {
     position: fixed;
-    left: 0;
-    right: 0;
+    top: 0;
     bottom: 0;
+    left: 0;
+    right: auto;
+    width: 25vw;
+    min-width: 120px;
+    max-width: 170px;
     z-index: 900;
-    height: 25dvh;
-    max-height: 25dvh;
-    min-width: 0;
     overflow-y: auto;
-    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    padding: 12px 10px calc(12px + env(safe-area-inset-bottom));
     border: 0;
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, .45);
-    transform: translateY(105%);
+    border-radius: 0 18px 18px 0;
+    box-shadow: 12px 0 40px rgba(0, 0, 0, .45);
+    transform: translateX(-105%);
     transition: transform .25s ease;
   }
-  main.mobile-tools-open aside { transform: translateY(0); }
+  main.mobile-tools-open aside { transform: translateX(0); }
+  aside::-webkit-scrollbar { width: 4px; }
   .map-panel { height: 100dvh; min-width: 0; min-height: 0; }
   .legend { gap: 7px; flex-wrap: wrap; }
   .mobile-tools-toggle {
@@ -348,6 +352,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
+  main.mobile-tools-open .mobile-tools-toggle { left: clamp(130px, calc(25vw + 10px), 180px); }
   .mobile-tools-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   .mobile-tools-toggle:focus-visible { outline: 3px solid #8bb5ff; outline-offset: 3px; }
   .mobile-tools-backdrop {
@@ -361,47 +366,92 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     animation: mobile-backdrop-in .2s ease forwards;
   }
   .weather-toolbar-wrap {
-    position: fixed;
-    left: 8px;
-    right: 8px;
-    top: auto;
-    bottom: calc(25dvh + 8px);
-    z-index: 950;
-    transform: translateY(150%);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform .25s ease, opacity .2s ease;
-  }
-  main.mobile-tools-open .weather-toolbar-wrap { transform: none; opacity: 1; pointer-events: auto; }
-  .weather-toolbar {
+    position: relative;
+    inset: auto;
     width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
+    min-width: 0;
+    max-width: none;
+    z-index: auto;
+    overflow: visible;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    transition: none;
+  }
+  .weather-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    overflow: visible;
     scrollbar-width: none;
-    border-radius: 14px;
+    border-radius: 0 0 14px 0;
   }
   .weather-toolbar::-webkit-scrollbar { display: none; }
-  .weather-toolbar-title { height: 44px; }
-  .weather-chip { min-height: 44px; padding: 0 10px; }
+  .weather-toolbar-title {
+    min-height: 44px;
+    height: auto;
+    padding: 8px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(140, 175, 235, .3);
+    white-space: normal;
+  }
+  .weather-chip {
+    width: 100%;
+    min-height: 44px;
+    height: auto;
+    padding: 8px;
+    justify-content: flex-start;
+    white-space: normal;
+    text-align: left;
+  }
   .mobile-only-layer { display: inline-flex; }
   .toolbar-popovers {
-    top: 52px;
-    width: min(390px, calc(100vw - 32px));
-    max-height: 40vh;
+    position: static;
+    width: 100%;
+    max-height: none;
+    padding: 6px 0;
+    overflow: visible;
+    z-index: auto;
   }
+  .toolbar-popover { padding: 9px 8px; overflow-wrap: anywhere; }
+  .toolbar-popover ul { padding-left: 14px; }
+  .toolbar-risk-legend { display: grid; grid-template-columns: 1fr; gap: 6px; }
   .forecast-control {
-    position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: calc(25dvh + 62px);
-    z-index: 940;
-    transform: translateY(150%);
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    z-index: auto;
+    transform: none;
     opacity: 0;
     pointer-events: none;
-    transition: transform .25s ease, opacity .2s ease;
+    transition: none;
   }
-  main.mobile-tools-open .forecast-control { transform: none; opacity: 1; pointer-events: auto; }
+  .forecast-control { opacity: 1; pointer-events: auto; }
   .forecast-control input { min-height: 44px; }
+  .forecast-control { padding: 10px 8px 8px; overflow-wrap: anywhere; }
+  .forecast-control > div:first-child { gap: 4px; flex-wrap: wrap; font-size: 11px; }
+  .forecast-control > div:first-child > * { min-width: 0; }
+  .forecast-control .legend { display: grid; grid-template-columns: 1fr; gap: 5px; font-size: 10px; }
+  form { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  form > label { width: 100%; min-width: 0; }
+  label, legend { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+  input { min-height: 44px; }
+  label input, .input-unit { width: 100%; min-width: 0; }
+  fieldset { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  fieldset button { min-width: 0; min-height: 44px; height: auto; padding: 6px 8px; overflow-wrap: anywhere; }
+  .primary, .demo-button { min-height: 44px; height: auto; padding: 8px 5px; white-space: normal; overflow-wrap: anywhere; }
+  .demo-note { overflow-wrap: anywhere; }
+  .route-list { width: 100%; min-width: 0; }
+  .route-list .route-card { width: 100%; min-width: 0; padding: 10px 7px; overflow-wrap: anywhere; }
+  .route-heading { flex-wrap: wrap; gap: 6px; }
+  .route-badges { flex-wrap: wrap; }
+  .metrics { flex-wrap: wrap; gap: 7px; overflow-wrap: anywhere; }
+  .risk-summary { grid-template-columns: 1fr; }
+  .weather-chip-icon { flex: 0 0 16px; }
 }
 
 @keyframes mobile-backdrop-in {
@@ -418,13 +468,13 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .brand-mark { flex: 0 0 36px; width: 36px; height: 36px; }
   header h1 { font-size: clamp(15px, 4.5vw, 18px); }
   .eyebrow { font-size: 9px; }
-  aside { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
+  aside { padding: 12px 10px calc(12px + env(safe-area-inset-bottom)); }
   form { gap: 12px; }
   label, legend { font-size: 13px; }
   input { height: 46px; font-size: 16px; }
   .input-unit span { top: 15px; }
   fieldset { gap: 8px; }
-  fieldset button { min-height: 42px; }
+  fieldset button { min-height: 44px; }
   .primary { min-height: 48px; }
   .demo-button { min-height: 44px; font-size: 13px; }
   .demo-note { font-size: 11px; }
@@ -685,5 +735,23 @@ fieldset button:hover:not(.active), .demo-button:hover:not(:disabled) {
     border: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+}
+
+@media (min-width: 801px) {
+  aside { backdrop-filter: none; }
+  aside > .weather-toolbar-wrap {
+    position: fixed;
+    top: 92px;
+    left: 346px;
+    right: 16px;
+    z-index: 600;
+  }
+  aside > .forecast-control {
+    position: fixed;
+    left: 350px;
+    right: 20px;
+    bottom: 20px;
+    z-index: 500;
   }
 }

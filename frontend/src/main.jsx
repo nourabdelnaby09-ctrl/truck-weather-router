@@ -558,6 +558,15 @@ function App() {
             {error && <p className="error">{error}</p>}
           </form>
 
+          <WeatherToolbar
+            mapLayers={mapLayers}
+            setMapLayers={setMapLayers}
+            radarLoading={radarLoading}
+            radarError={radarError}
+            alertCheckpoints={alertCheckpoints}
+            forecastHour={forecastHour}
+          />
+
           {activeRoutes.length > 0 && (
             <div className="route-list">
               {activeRoutes.map((route) => (
@@ -591,17 +600,25 @@ function App() {
               ))}
             </div>
           )}
+
+          {activeRoutes.length > 0 && (
+            <div className="forecast-control">
+              <div>
+                <span>Forecast corridor</span>
+                <b>{forecastLoading || corridorLoading ? "Updating…" : `+${forecastHour} hr`}</b>
+              </div>
+              <input aria-label="Forecast hour offset" type="range" min="0" max="48" value={forecastHour} onChange={(e) => setForecastHour(Number(e.target.value))} />
+              {forecastError && <p className="error">{forecastError}</p>}
+              <div className="legend">
+                {Object.entries(RISK_COLORS).map(([label, color]) => (
+                  <span key={label}><i style={{ background: color }} />{label}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </aside>
 
         <section className="map-panel">
-          <WeatherToolbar
-            mapLayers={mapLayers}
-            setMapLayers={setMapLayers}
-            radarLoading={radarLoading}
-            radarError={radarError}
-            alertCheckpoints={alertCheckpoints}
-            forecastHour={forecastHour}
-          />
           <MapContainer center={[41.8781, -87.6298]} zoom={7} scrollWheelZoom>
             <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <WindDemoFocus active={windDemo} />
@@ -671,22 +688,6 @@ function App() {
               </CircleMarker>
             )}
           </MapContainer>
-
-          {activeRoutes.length > 0 && (
-            <div className="forecast-control">
-              <div>
-                <span>Forecast corridor</span>
-                <b>{forecastLoading || corridorLoading ? "Updating…" : `+${forecastHour} hr`}</b>
-              </div>
-              <input aria-label="Forecast hour offset" type="range" min="0" max="48" value={forecastHour} onChange={(e) => setForecastHour(Number(e.target.value))} />
-              {forecastError && <p className="error">{forecastError}</p>}
-              <div className="legend">
-                {Object.entries(RISK_COLORS).map(([label, color]) => (
-                  <span key={label}><i style={{ background: color }} />{label}</span>
-                ))}
-              </div>
-            </div>
-          )}
         </section>
       </section>
     </main>
