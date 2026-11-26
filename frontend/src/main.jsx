@@ -296,6 +296,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [forecastHour, setForecastHour] = useState(0);
+  const [appliedHour, setAppliedHour] = useState(0);
+  const [forecastAppliedAnnouncement, setForecastAppliedAnnouncement] = useState("");
   const [forecastRoutes, setForecastRoutes] = useState(null);
   const [forecastError, setForecastError] = useState("");
   const [forecastLoading, setForecastLoading] = useState(false);
@@ -304,6 +306,8 @@ function App() {
   const corridorCache = useRef(new Map());
   const [windDemo, setWindDemo] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
+  const drawerRef = useRef(null);
+  const [toolsScrolled, setToolsScrolled] = useState(false);
   const [mapLayers, setMapLayers] = useState({
     weather: false,
     temp: false,
@@ -317,6 +321,9 @@ function App() {
   const [radarTimestamp, setRadarTimestamp] = useState(radarTimestampCache);
   const [radarLoading, setRadarLoading] = useState(!radarTimestampCache);
   const [radarError, setRadarError] = useState("");
+  const previewTime = new Date(
+    new Date(form.departure).getTime() + forecastHour * 3600000,
+  ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   useEffect(() => {
     if (!mobileToolsOpen) return undefined;
@@ -348,7 +355,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!data || forecastHour === 0) {
+    if (!data || appliedHour === 0) {
       setForecastRoutes(null);
       setForecastError("");
       setForecastLoading(false);
@@ -365,7 +372,7 @@ function App() {
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
           body: JSON.stringify({
-            forecastHour,
+            forecastHour: appliedHour,
             loadWeight: form.loadWeight,
             routes: activeRoutes.map((route) => ({
               id: route.id,
@@ -383,13 +390,13 @@ function App() {
       } finally {
         if (!controller.signal.aborted) setForecastLoading(false);
       }
-    }, 250);
+    }, 100);
 
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [data, forecastHour, form.loadWeight]);
+  }, [data, appliedHour, form.loadWeight]);
 
   async function submit(event) {
     event.preventDefault();
@@ -406,6 +413,8 @@ function App() {
       setData(payload);
       setSelectedRouteId(payload.routes.find((route) => route.recommended)?.id ?? payload.routes[0]?.id ?? null);
       setForecastHour(0);
+      setAppliedHour(0);
+      setForecastAppliedAnnouncement("");
       setForecastRoutes(null);
       corridorCache.current.clear();
       setCorridorCells([]);
@@ -440,14 +449,14 @@ function App() {
 
   // Corridor grid: debounce 100ms, cache by (cell batch, hour), prefetch ±1 hour.
   useEffect(() => {
-    if (!selectedRoute || forecastHour === 0) {
+    if (!selectedRoute || appliedHour === 0) {
       setCorridorCells([]);
       setCorridorLoading(false);
       return undefined;
     }
     const controller = new AbortController();
     const cacheKey = (hour) => `${selectedRoute.id}:${form.loadWeight}:${form.departure}:${hour}`;
-    const hours = [forecastHour - 1, forecastHour, forecastHour + 1]
+    const hours = [appliedHour - 1, appliedHour, appliedHour + 1]
       .filter((hour) => hour >= 0 && hour <= 48);
     const missing = hours.filter((hour) => !corridorCache.current.has(cacheKey(hour)));
 
@@ -471,7 +480,7 @@ function App() {
           corridorCache.current.set(cacheKey(hour), payload.cells);
         }));
         if (!controller.signal.aborted) {
-          setCorridorCells(corridorCache.current.get(cacheKey(forecastHour)) || []);
+          setCorridorCells(corridorCache.current.get(cacheKey(appliedHour)) || []);
         }
       } catch (err) {
         if (err.name !== "AbortError") setCorridorCells([]);
@@ -484,10 +493,15 @@ function App() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [selectedRoute, forecastHour, form.loadWeight, form.departure]);
+  }, [selectedRoute, appliedHour, form.loadWeight, form.departure]);
+
+  function applyForecast() {
+    setAppliedHour(forecastHour);
+    setForecastAppliedAnnouncement(`Forecast applied at ${previewTime}`);
+  }
 
   return (
-    <main className={mobileToolsOpen ? "mobile-tools-open" : ""}>
+    <main className={`${mobileToolsOpen ? "mobile-tools-open " : ""}${toolsScrolled ? "tools-scrolled" : ""}`}>
       <header>
         <div className="brand-mark"><img src="/truck-logo.png" alt="TruckWeather logo" /></div>
         <div>
@@ -518,7 +532,11 @@ function App() {
       </button>
 
       <section className="workspace">
-        <aside id="mobile-tools-drawer">
+        <aside
+          id="mobile-tools-drawer"
+          ref={drawerRef}
+          onScroll={(event) => setToolsScrolled(event.currentTarget.scrollTop > 24)}
+        >
           <form onSubmit={submit}>
             <label>Origin
               <input value={form.origin} onChange={(e) => update("origin", e.target.value)} required />
@@ -603,11 +621,35 @@ function App() {
 
           {activeRoutes.length > 0 && (
             <div className="forecast-control">
-              <div>
-                <span>Forecast corridor</span>
-                <b>{forecastLoading || corridorLoading ? "Updating…" : `+${forecastHour} hr`}</b>
+              <div className="forecast-heading">
+                <span>Forecast corridor · +{forecastHour} hr ({previewTime})</span>
+                <div className="forecast-status">
+                  {forecastHour !== appliedHour ? (
+                    <span className="forecast-preview-badge">Preview — not applied</span>
+                  ) : (
+                    <b>{forecastLoading || corridorLoading ? "Updating…" : `Applied +${appliedHour} hr`}</b>
+                  )}
+                </div>
               </div>
-              <input aria-label="Forecast hour offset" type="range" min="0" max="48" value={forecastHour} onChange={(e) => setForecastHour(Number(e.target.value))} />
+              <input
+                aria-label="Forecast hour offset"
+                aria-valuetext={`${previewTime}, ${forecastHour} hours later`}
+                type="range"
+                min="0"
+                max="48"
+                value={forecastHour}
+                onChange={(e) => setForecastHour(Number(e.target.value))}
+              />
+              <button
+                className="apply-forecast"
+                type="button"
+                aria-label={`Apply forecast at ${previewTime}`}
+                disabled={forecastHour === appliedHour}
+                onClick={applyForecast}
+              >
+                {forecastHour === appliedHour ? `Applied +${appliedHour} hr` : "Apply forecast"}
+              </button>
+              <span className="sr-only" role="status" aria-live="polite">{forecastAppliedAnnouncement}</span>
               {forecastError && <p className="error">{forecastError}</p>}
               <div className="legend">
                 {Object.entries(RISK_COLORS).map(([label, color]) => (
