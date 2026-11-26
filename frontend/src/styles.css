@@ -3,6 +3,7 @@
   color: #172033;
   background: #eef2f7;
   font-synthesis: none;
+  --tools-lift: 0px;
 }
 
 * { box-sizing: border-box; }
@@ -354,7 +355,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
-    padding: 12px 10px calc(80px + env(safe-area-inset-bottom));
+    padding: 12px 10px calc(170px + env(safe-area-inset-bottom));
     border: 0;
     border-radius: 0 18px 18px 0;
     box-shadow: 12px 0 40px rgba(0, 0, 0, .45);
@@ -402,23 +403,18 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .weather-toolbar-wrap {
     position: fixed;
     top: auto;
-    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    bottom: calc(env(safe-area-inset-bottom) + 76px + var(--tools-lift));
     left: 8px;
-    right: auto;
-    width: calc(50vw - 16px);
+    right: 8px;
+    width: auto;
     min-width: 0;
     max-width: none;
     z-index: 960;
-    overflow: hidden;
-    transform: translateX(-105%);
-    opacity: 0;
-    pointer-events: none;
-    transition: top .25s ease, bottom .25s ease, transform .25s ease, opacity .2s ease;
-  }
-  main.mobile-tools-open .weather-toolbar-wrap { transform: none; opacity: 1; pointer-events: auto; }
-  main.tools-scrolled .weather-toolbar-wrap {
-    top: calc(68px + env(safe-area-inset-top) + 8px);
-    bottom: auto;
+    overflow: visible;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    transition: bottom .2s ease;
   }
   .weather-toolbar {
     flex-direction: row;
@@ -464,20 +460,19 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .toolbar-popover ul { padding-left: 14px; }
   .toolbar-risk-legend { display: grid; grid-template-columns: 1fr; gap: 6px; }
   .forecast-control {
-    position: static;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    width: 100%;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(env(safe-area-inset-bottom) + 10px + var(--tools-lift));
+    width: auto;
     min-width: 0;
     max-width: none;
-    z-index: auto;
+    z-index: 950;
     transform: none;
-    opacity: 0;
-    pointer-events: none;
-    transition: none;
+    opacity: 1;
+    pointer-events: auto;
+    transition: bottom .2s ease;
   }
-  .forecast-control { opacity: 1; pointer-events: auto; }
   .forecast-control input { min-height: 44px; }
   .forecast-control { padding: 10px 8px 8px; overflow-wrap: anywhere; }
   .forecast-control > div:first-child { gap: 4px; flex-wrap: wrap; font-size: 11px; }
@@ -519,7 +514,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .brand-mark { flex: 0 0 36px; width: 36px; height: 36px; }
   header h1 { font-size: clamp(15px, 4.5vw, 18px); }
   .eyebrow { font-size: 9px; }
-  aside { padding: 12px 10px calc(80px + env(safe-area-inset-bottom)); }
+  aside { padding: 12px 10px calc(170px + env(safe-area-inset-bottom)); }
   form { gap: 12px; }
   label, legend { font-size: 13px; }
   input { height: 46px; font-size: 16px; }
