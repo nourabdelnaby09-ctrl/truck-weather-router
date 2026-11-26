@@ -355,7 +355,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
-    padding: 12px 10px calc(170px + env(safe-area-inset-bottom));
+    padding: 10px 10px calc(220px + env(safe-area-inset-bottom));
     border: 0;
     border-radius: 0 18px 18px 0;
     box-shadow: 12px 0 40px rgba(0, 0, 0, .45);
@@ -403,7 +403,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .weather-toolbar-wrap {
     position: fixed;
     top: auto;
-    bottom: calc(env(safe-area-inset-bottom) + 76px + var(--tools-lift));
+    bottom: calc(env(safe-area-inset-bottom) + 106px + var(--tools-lift));
     left: 8px;
     right: 8px;
     width: auto;
@@ -417,36 +417,32 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     transition: bottom .2s ease;
   }
   .weather-toolbar {
-    flex-direction: row;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    border-radius: 14px;
+    padding: 5px;
+    overflow: visible;
+    border-radius: 16px;
   }
-  .weather-toolbar::-webkit-scrollbar { display: none; }
-  .weather-toolbar-title {
-    flex: 0 0 auto;
-    min-height: 44px;
-    height: auto;
-    padding: 8px;
-    border-right: 1px solid rgba(140, 175, 235, .3);
-    border-bottom: 0;
-    white-space: normal;
-  }
+  .weather-toolbar-title { display: none; }
   .weather-chip {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: max-content;
-    min-height: 44px;
-    height: auto;
-    padding: 8px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 40px;
+    height: 40px;
+    padding: 3px 2px;
+    gap: 3px;
     justify-content: center;
     white-space: nowrap;
+    overflow: hidden;
     text-align: center;
+    font-size: 10px;
   }
+  .weather-chip-icon { width: 14px; height: 14px; flex: 0 0 14px; }
+  .alert-count { min-width: 14px; height: 14px; font-size: 8px; padding: 0 2px; }
   .mobile-only-layer { display: inline-flex; }
   .toolbar-popovers {
     position: static;
@@ -482,15 +478,17 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .forecast-preview-badge { white-space: normal; }
   .forecast-control .legend { display: grid; grid-template-columns: 1fr; gap: 5px; font-size: 10px; }
   .apply-forecast { min-height: 44px; margin-top: 8px; }
-  form { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  form { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 8px; }
   form > label { width: 100%; min-width: 0; }
-  label, legend { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
-  input { min-height: 44px; }
+  label, legend { font-size: 11px; line-height: 1.25; overflow-wrap: anywhere; }
+  label input, .input-unit { margin-top: 3px; }
+  input { min-height: 40px; height: 40px; font-size: 14px; }
   label input, .input-unit { width: 100%; min-width: 0; }
-  fieldset { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  fieldset button { min-width: 0; min-height: 44px; height: auto; padding: 6px 8px; overflow-wrap: anywhere; }
-  .primary, .demo-button { min-height: 44px; height: auto; padding: 8px 5px; white-space: normal; overflow-wrap: anywhere; }
-  .demo-note { overflow-wrap: anywhere; }
+  fieldset { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  legend { grid-column: 1 / -1; margin-bottom: 2px; }
+  fieldset button { min-width: 0; min-height: 38px; height: 38px; padding: 4px 2px; font-size: 12px; overflow-wrap: anywhere; }
+  .primary, .demo-button { min-height: 40px; height: 40px; padding: 6px 4px; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+  .demo-note { display: none; }
   .route-list { width: 100%; min-width: 0; }
   .route-list .route-card { width: 100%; min-width: 0; padding: 10px 7px; overflow-wrap: anywhere; }
   .route-heading { flex-wrap: wrap; gap: 6px; }
@@ -514,16 +512,16 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
   .brand-mark { flex: 0 0 36px; width: 36px; height: 36px; }
   header h1 { font-size: clamp(15px, 4.5vw, 18px); }
   .eyebrow { font-size: 9px; }
-  aside { padding: 12px 10px calc(170px + env(safe-area-inset-bottom)); }
-  form { gap: 12px; }
-  label, legend { font-size: 13px; }
-  input { height: 46px; font-size: 16px; }
-  .input-unit span { top: 15px; }
-  fieldset { gap: 8px; }
-  fieldset button { min-height: 44px; }
-  .primary { min-height: 48px; }
-  .demo-button { min-height: 44px; font-size: 13px; }
-  .demo-note { font-size: 11px; }
+  aside { padding: 10px 10px calc(220px + env(safe-area-inset-bottom)); }
+  form { gap: 8px; }
+  label, legend { font-size: 11px; }
+  input { height: 40px; min-height: 40px; font-size: 14px; }
+  .input-unit span { top: 12px; }
+  fieldset { gap: 5px; }
+  fieldset button { min-height: 38px; height: 38px; font-size: 12px; }
+  .primary { min-height: 40px; height: 40px; font-size: 13px; }
+  .demo-button { min-height: 38px; height: 38px; font-size: 12px; }
+  .demo-note { display: none; }
   .route-list { gap: 10px; margin-top: 16px; }
   .route-list .route-card { padding: 12px 11px; }
   .route-heading { align-items: flex-start; gap: 8px; }
