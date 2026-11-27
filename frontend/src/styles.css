@@ -357,6 +357,7 @@ fieldset button.active { border-color: #2f66d0; background: #edf3fd; color: #235
     scrollbar-width: thin;
     padding: 10px 10px calc(220px + env(safe-area-inset-bottom));
     border: 0;
+    border-right: 1px solid rgba(140, 175, 235, .3);
     border-radius: 0 18px 18px 0;
     box-shadow: 12px 0 40px rgba(0, 0, 0, .45);
     transform: translateX(-105%);
