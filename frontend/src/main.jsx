@@ -548,7 +548,7 @@ function App() {
               <input value={form.destination} onChange={(e) => update("destination", e.target.value)} required />
             </label>
             <label>Departure
-              <input type="datetime-local" value={form.departure} onChange={(e) => update("departure", e.target.value)} required />
+              <input className="departure-input" type="datetime-local" value={form.departure} onChange={(e) => update("departure", e.target.value)} required />
             </label>
             <label>Load weight
               <div className="input-unit">
