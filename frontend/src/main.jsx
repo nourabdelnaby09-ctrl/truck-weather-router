@@ -613,45 +613,6 @@ function App() {
             </div>
           )}
 
-          {activeRoutes.length > 0 && (
-            <div className="forecast-control">
-              <div className="forecast-heading">
-                <span>Forecast corridor · +{forecastHour} hr ({previewTime})</span>
-                <div className="forecast-status">
-                  {forecastHour !== appliedHour ? (
-                    <span className="forecast-preview-badge">Preview — not applied</span>
-                  ) : (
-                    <b>{forecastLoading || corridorLoading ? "Updating…" : `Applied +${appliedHour} hr`}</b>
-                  )}
-                </div>
-              </div>
-              <input
-                aria-label="Forecast hour offset"
-                aria-valuetext={`${previewTime}, ${forecastHour} hours later`}
-                type="range"
-                min="0"
-                max="48"
-                value={forecastHour}
-                onChange={(e) => setForecastHour(Number(e.target.value))}
-              />
-              <button
-                className="apply-forecast"
-                type="button"
-                aria-label={`Apply forecast at ${previewTime}`}
-                disabled={forecastHour === appliedHour}
-                onClick={applyForecast}
-              >
-                {forecastHour === appliedHour ? `Applied +${appliedHour} hr` : "Apply forecast"}
-              </button>
-              <span className="sr-only" role="status" aria-live="polite">{forecastAppliedAnnouncement}</span>
-              {forecastError && <p className="error">{forecastError}</p>}
-              <div className="legend">
-                {Object.entries(RISK_COLORS).map(([label, color]) => (
-                  <span key={label}><i style={{ background: color }} />{label}</span>
-                ))}
-              </div>
-            </div>
-          )}
         </aside>
 
         <section className="map-panel">
@@ -724,6 +685,45 @@ function App() {
               </CircleMarker>
             )}
           </MapContainer>
+          {activeRoutes.length > 0 && (
+            <div className="forecast-control">
+              <div className="forecast-heading">
+                <span>Forecast corridor · +{forecastHour} hr ({previewTime})</span>
+                <div className="forecast-status">
+                  {forecastHour !== appliedHour ? (
+                    <span className="forecast-preview-badge">Preview — not applied</span>
+                  ) : (
+                    <b>{forecastLoading || corridorLoading ? "Updating…" : `Applied +${appliedHour} hr`}</b>
+                  )}
+                </div>
+              </div>
+              <input
+                aria-label="Forecast hour offset"
+                aria-valuetext={`${previewTime}, ${forecastHour} hours later`}
+                type="range"
+                min="0"
+                max="48"
+                value={forecastHour}
+                onChange={(e) => setForecastHour(Number(e.target.value))}
+              />
+              <button
+                className="apply-forecast"
+                type="button"
+                aria-label={`Apply forecast at ${previewTime}`}
+                disabled={forecastHour === appliedHour}
+                onClick={applyForecast}
+              >
+                {forecastHour === appliedHour ? `Applied +${appliedHour} hr` : "Apply forecast"}
+              </button>
+              <span className="sr-only" role="status" aria-live="polite">{forecastAppliedAnnouncement}</span>
+              {forecastError && <p className="error">{forecastError}</p>}
+              <div className="legend">
+                {Object.entries(RISK_COLORS).map(([label, color]) => (
+                  <span key={label}><i style={{ background: color }} />{label}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       </section>
       <WeatherToolbar

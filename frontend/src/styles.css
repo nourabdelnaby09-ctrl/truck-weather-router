@@ -805,7 +805,7 @@ fieldset button:hover:not(.active), .demo-button:hover:not(:disabled) {
     right: 16px;
     z-index: 600;
   }
-  aside > .forecast-control {
+  .forecast-control {
     position: fixed;
     left: 350px;
     right: 20px;
